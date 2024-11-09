@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35122.118
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnipApiIS", "SnipApiIS\SnipApiIS.csproj", "{EFEC07B6-5BFD-4009-A4DC-D30555BEE9CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnipAuthServer", "SnipAuthServer\SnipAuthServer.csproj", "{8A4C35E2-0E0B-4DC9-8695-A91634ADECF1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnipApiGateway", "SnipApiGateway\SnipApiGateway.csproj", "{181446A3-B1FA-431F-9683-FB51C2EBA7AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EFEC07B6-5BFD-4009-A4DC-D30555BEE9CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EFEC07B6-5BFD-4009-A4DC-D30555BEE9CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EFEC07B6-5BFD-4009-A4DC-D30555BEE9CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EFEC07B6-5BFD-4009-A4DC-D30555BEE9CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A4C35E2-0E0B-4DC9-8695-A91634ADECF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A4C35E2-0E0B-4DC9-8695-A91634ADECF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A4C35E2-0E0B-4DC9-8695-A91634ADECF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A4C35E2-0E0B-4DC9-8695-A91634ADECF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{181446A3-B1FA-431F-9683-FB51C2EBA7AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{181446A3-B1FA-431F-9683-FB51C2EBA7AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{181446A3-B1FA-431F-9683-FB51C2EBA7AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{181446A3-B1FA-431F-9683-FB51C2EBA7AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
