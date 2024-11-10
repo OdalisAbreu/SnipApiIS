@@ -89,11 +89,12 @@ builder.Services.AddSwaggerGen(c =>
     // Configuración de seguridad para el token de autenticación
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Ingrese 'Bearer' [espacio] y luego el token en el campo de texto.",
+        Description = "Ingrese su token JWT a continuación:",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer", 
+        BearerFormat = "JWT" 
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -107,7 +108,7 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
     // Añadir el filtro de orden de documento
