@@ -15,7 +15,9 @@ builder.Services.AddTransient<IResourceOwnerPasswordValidator, CustomResourceOwn
 builder.Services.AddIdentityServer()
     .AddInMemoryApiScopes(new List<ApiScope>
     {
-        new ApiScope("api1", new[] { "custom_claim", "Id_usuario", "estado_usuario", "email", "roles" }) // Agrega los claims necesarios
+      //  new ApiScope("api1", new[] { "custom_claim", "Id_usuario", "estado_usuario", "email", "roles" }) // Agrega los claims necesarios
+        new ApiScope("api", "Access to API"),
+       new ApiScope("api1", "Access to API 1")
     })
     .AddInMemoryClients(new List<Client>
     {
@@ -24,7 +26,18 @@ builder.Services.AddIdentityServer()
             ClientId = "client",
             AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
             ClientSecrets = { new Secret("secret".Sha256()) },
-            AllowedScopes = { "api1" }
+            AllowedScopes = { "api1", "api" }
+        }
+    })
+    .AddInMemoryApiResources(new List<ApiResource>
+    {
+        new ApiResource("api1", "API 1")
+        {
+            Scopes = { "api1" }
+        },
+        new ApiResource("api2", "API 2")
+        {
+            Scopes = { "api2" }
         }
     })
     .AddDeveloperSigningCredential();
@@ -47,6 +60,11 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("api", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim("scope", "api");
+    });
     options.AddPolicy("api1", policy =>
     {
         policy.RequireAuthenticatedUser();

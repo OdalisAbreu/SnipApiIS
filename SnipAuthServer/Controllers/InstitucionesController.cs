@@ -7,7 +7,6 @@ namespace SnipAuthServer.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
-    [Authorize(Policy = "api1")]
     public class InstitucionesController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -20,6 +19,7 @@ namespace SnipAuthServer.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "api1")]
         public async Task<IActionResult> GetInstituciones(
             [FromQuery] int? id_institucion = null,
             [FromQuery] string? cod_inst_snip = null,
