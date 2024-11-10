@@ -8,7 +8,7 @@ namespace SnipAuthServer.Controllers
     public class SecureController : ControllerBase
     {
         [HttpGet("data")]
-        [Authorize(Policy = "api1")]
+        [Authorize(Policy = "api")]
         public IActionResult GetData()
         {
             return Ok(new { Message = "Esta es una respuesta segura desde el API." });
