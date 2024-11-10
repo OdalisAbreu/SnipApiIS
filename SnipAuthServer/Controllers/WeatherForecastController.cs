@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+/*using Microsoft.AspNetCore.Mvc;
 
 namespace SnipAuthServer.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class WeatherForecastController  : ControllerBase
     {
         private static readonly string[] Summaries = new[]
         {
@@ -30,4 +30,4 @@ namespace SnipAuthServer.Controllers
             .ToArray();
         }
     }
-}
+}*/

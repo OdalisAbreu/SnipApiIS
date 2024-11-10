@@ -4,6 +4,10 @@ using IdentityServer4.Validation;
 using Microsoft.IdentityModel.Tokens;
 using SnipAuthServer.Validators;
 using System.Security.Claims;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Microsoft.OpenApi.Any;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,13 +76,82 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
+// Configuración de Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "AuthServer API",
+        Version = "v1",
+        Description = "API de autenticación con IdentityServer4 y otros servicios"
+    });
+
+    // Configuración de seguridad para el token de autenticación
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Ingrese 'Bearer' [espacio] y luego el token en el campo de texto.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+    c.DocumentFilter<ExcludeRoutesDocumentFilter>();
+});
+
+
 var app = builder.Build();
 
 // Middlewares
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AuthServer API v1");
+});
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
+
 app.UseRouting();
-app.UseIdentityServer(); // Asegúrate de agregar este middleware para habilitar los endpoints de IdentityServer
+app.UseIdentityServer(); 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+//Elimina del Swagger los controladores que no se desea mostrar 
+public class ExcludeRoutesDocumentFilter : IDocumentFilter
+{
+    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+    {
+        var excludedRoutes = new[] { "/outputcache/{region}", "/configuration", "/api/secure/data" };
+
+        foreach (var route in excludedRoutes)
+        {
+            var key = swaggerDoc.Paths.Keys.FirstOrDefault(k => k.Contains(route));
+            if (key != null)
+            {
+                swaggerDoc.Paths.Remove(key);
+            }
+        }
+    }
+}
+
