@@ -89,11 +89,12 @@ builder.Services.AddSwaggerGen(c =>
     // Configuración de seguridad para el token de autenticación
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Ingrese 'Bearer' [espacio] y luego el token en el campo de texto.",
+        Description = "Ingrese su token JWT a continuación:",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer", 
+        BearerFormat = "JWT" 
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -107,9 +108,13 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
+    // Añadir el filtro de orden de documento
+    c.DocumentFilter<CustomOrderDocumentFilter>();
+
+    // Excluir rutas específicas si es necesario
     c.DocumentFilter<ExcludeRoutesDocumentFilter>();
 });
 
@@ -151,6 +156,29 @@ public class ExcludeRoutesDocumentFilter : IDocumentFilter
             {
                 swaggerDoc.Paths.Remove(key);
             }
+        }
+    }
+}
+
+public class CustomOrderDocumentFilter : IDocumentFilter
+{
+    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+    {
+        // Obtiene todas las rutas y las reordena con base en tu lógica
+        var orderedPaths = swaggerDoc.Paths.OrderBy(path =>
+        {
+            if (path.Key.Contains("/api/v1/Login"))
+            {
+                return 0; // Asigna el primer lugar al endpoint de Login
+            }
+            return 1; // Asigna a los demás un valor mayor para que vayan después
+        }).ToDictionary(x => x.Key, x => x.Value);
+
+        // Reemplaza las rutas en el documento con las rutas ordenadas
+        swaggerDoc.Paths = new OpenApiPaths();
+        foreach (var path in orderedPaths)
+        {
+            swaggerDoc.Paths.Add(path.Key, path.Value);
         }
     }
 }

@@ -50,6 +50,12 @@ namespace SnipAuthServer.Controllers
             var query = "SELECT * FROM cla_instituciones_snip WHERE 1=1";
             var parameters = new DynamicParameters();
 
+            if (id_institucion.HasValue)
+            {
+                query += " AND id_institucion = @id_institucion";
+                parameters.Add("id_institucion", id_institucion.Value);
+            }
+
             if (!string.IsNullOrEmpty(cod_inst_snip))
             {
                 query += " AND sigla = @cod_inst_snip";
