@@ -93,7 +93,7 @@ namespace SnipAuthServer.Controllers
             }
 
             // Registrar éxito en la base de datos y Sentry
-            _logger.LogInformation("Endpoint: GetInstituciones | Usuario: {Usuario} | Hora: {FechaHora} | Estado: Éxito", usuario, fechaHora);
+            SentrySdk.CaptureMessage($"Usuario {usuario} consultó el endpoint GetInstituciones a las {DateTime.UtcNow}");
             return Ok(result);
         }
     }

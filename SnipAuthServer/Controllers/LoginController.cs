@@ -117,10 +117,10 @@ namespace SnipAuthServer.Controllers
                     Cargo = userFields[12],
                     EsAdministrador = int.Parse(userFields[13])
                 };
-
+                SentrySdk.CaptureMessage($"Usuario {loginRequest.Username} inició sesión a las {DateTime.UtcNow}");
                 return Ok(customResponse);
             }
-
+            SentrySdk.CaptureMessage($"Intento de inicio de sesión fallido para el usuario {loginRequest.Username} a las {DateTime.UtcNow}");
             return BadRequest("Error al autenticar");
         }
 
@@ -188,15 +188,18 @@ namespace SnipAuthServer.Controllers
                 {
                     // Agregar el token a la lista negra
                     _tokenRevocationService.RevokeToken(jti);
+                    SentrySdk.CaptureMessage($"Token de usuario revocado a las {DateTime.UtcNow}");
                     return Ok(new { message = "Token revocado exitosamente." });
                 }
                 else
                 {
+                    SentrySdk.CaptureMessage($"Error Token revocado no válido No se encontró el ID del token (Jti). {DateTime.UtcNow}");
                     return BadRequest(new { message = "No se encontró el ID del token (Jti)." });
                 }
             }
             else
             {
+                SentrySdk.CaptureMessage($"Error Token revocado no válido {DateTime.UtcNow}");
                 return BadRequest(new { message = "Token no válido." });
             }
             //***************************************************************************************************************

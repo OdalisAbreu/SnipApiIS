@@ -7,7 +7,6 @@ using System.Security.Claims;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.OpenApi.Any;
-//using SnipAuthServer.Helpers;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Logging;
 using SnipAuthServer.Services;
@@ -88,6 +87,15 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
+// Configurar Sentry usando la configuración de appsettings.json
+builder.WebHost.UseSentry(options =>
+{
+    options.Dsn = builder.Configuration["Sentry:Dsn"];
+    options.Debug = bool.Parse(builder.Configuration["Sentry:Debug"]);
+    options.TracesSampleRate = double.Parse(builder.Configuration["Sentry:TracesSampleRate"]);
+    options.AttachStacktrace = bool.Parse(builder.Configuration["Sentry:AttachStacktrace"]);
+});
+
 // Configuración de Swagger
 builder.Services.AddSwaggerGen(c =>
 {
@@ -146,7 +154,7 @@ if (app.Environment.IsDevelopment())
     IdentityModelEventSource.ShowPII = true;
 }
 
-
+app.UseSentryTracing();
 app.UseRouting();
 app.UseIdentityServer(); 
 app.UseAuthentication();
