@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿/*using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace SnipAuthServer.Controllers
@@ -14,4 +14,4 @@ namespace SnipAuthServer.Controllers
             return Ok(new { Message = "Esta es una respuesta segura desde el API." });
         }
     }
-}
+}*/

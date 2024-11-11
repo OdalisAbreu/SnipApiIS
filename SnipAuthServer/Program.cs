@@ -7,6 +7,11 @@ using System.Security.Claims;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.OpenApi.Any;
+//using SnipAuthServer.Helpers;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Logging;
+using SnipAuthServer.Services;
+using SnipAuthServer.Middleware;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, CustomResourceOwnerPasswordValidator>();
+builder.Services.AddSingleton<TokenRevocationService>();
 
 // Configuración de IdentityServer4
 builder.Services.AddIdentityServer()
@@ -30,7 +36,8 @@ builder.Services.AddIdentityServer()
             ClientId = "client",
             AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
             ClientSecrets = { new Secret("secret".Sha256()) },
-            AllowedScopes = { "api1", "api" }
+            AllowedScopes = { "api1", "api" },
+            AccessTokenLifetime = 1800
         }
     })
     .AddInMemoryApiResources(new List<ApiResource>
@@ -53,12 +60,17 @@ builder.Services.AddAuthentication("Bearer")
         options.Authority = "https://localhost:7180"; // Cambia por la URL que uses
         options.RequireHttpsMetadata = false; // Solo para desarrollo
         options.Audience = "api1";
+        options.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(5);
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = "https://localhost:7180", // Verifica que coincida con el emisor del token
             ValidateAudience = false,
-            ValidAudiences = new[] { "api1" } // Agrega los valores de audiencias permitidas
+            ValidAudiences = new[] { "api1" }, // Agrega los valores de audiencias permitidas
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+  
         };
     });
 
@@ -131,12 +143,14 @@ app.UseSwaggerUI(c =>
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    IdentityModelEventSource.ShowPII = true;
 }
 
 
 app.UseRouting();
 app.UseIdentityServer(); 
 app.UseAuthentication();
+app.UseMiddleware<TokenRevocationMiddleware>(); // Middleware de revocación de token
 app.UseAuthorization();
 app.MapControllers();
 
@@ -147,7 +161,8 @@ public class ExcludeRoutesDocumentFilter : IDocumentFilter
 {
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
-        var excludedRoutes = new[] { "/outputcache/{region}", "/configuration", "/api/secure/data" };
+        var excludedRoutes = new[] { "/outputcache/{region}", "/configuration", "/api/secure/data", "/v1/Swagger" };
+
 
         foreach (var route in excludedRoutes)
         {

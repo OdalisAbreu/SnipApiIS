@@ -11,7 +11,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7180 // Asegúrate de que este sea el puerto correcto de AuthServer
+          "Port": 7180
         }
       ]
     },
@@ -23,7 +23,43 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7180 // Asegúrate de que este sea el puerto correcto de AuthServer
+          "Port": 7180
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/Login/revokeToken",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/Login/revokeToken",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7180
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/Instituciones",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/v1/Instituciones",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7180
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/v1/Swagger",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/v1/Swagger",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7180
         }
       ]
     }
