@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Logging;
 using SnipAuthServer.Services;
 using SnipAuthServer.Middleware;
+using Microsoft.AspNetCore.HttpOverrides;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,19 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, CustomResourceOwnerPasswordValidator>();
 builder.Services.AddSingleton<TokenRevocationService>();
+
+// Configuración de CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins("https://localhost:7180") // Cambia a tu dominio autorizado
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 
 // Configuración de IdentityServer4
 builder.Services.AddIdentityServer()
@@ -141,7 +155,15 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Configurar Forwarded Headers
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+
 // Middlewares
+app.UseCors("CorsPolicy"); // Aplicar la política de CORS
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
