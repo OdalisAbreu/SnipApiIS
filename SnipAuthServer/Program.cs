@@ -26,14 +26,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("https://localhost:7180") // Cambia a tu dominio autorizado
+        policy.WithOrigins("https://localhost:7180") // Cambiar al dominio autorizado
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
     });
 });
-
-
 // Configuración de IdentityServer4
 builder.Services.AddIdentityServer()
     .AddInMemoryApiScopes(new List<ApiScope>
@@ -50,9 +48,10 @@ builder.Services.AddIdentityServer()
             AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
             ClientSecrets = { new Secret("secret".Sha256()) },
             AllowedScopes = { "api1", "api" },
-            AccessTokenLifetime = 1800
+            AccessTokenLifetime = 1800,
+            AllowOfflineAccess = true,
         }
-    })
+    })//crear otro cliente para revocar el token
     .AddInMemoryApiResources(new List<ApiResource>
     {
         new ApiResource("api1", "API 1")
@@ -117,11 +116,9 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "AuthServer API",
         Version = "v1",
-        Description = "API de autenticación con IdentityServer4 y otros servicios"
+        Description = "API de Servicios"
     });
-
-    // Configuración de seguridad para el token de autenticación
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme // Configuración de seguridad para el token de autenticación
     {
         Description = "Ingrese su token JWT a continuación:",
         Name = "Authorization",
@@ -130,7 +127,6 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer", 
         BearerFormat = "JWT" 
     });
-
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -145,11 +141,8 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-    // Añadir el filtro de orden de documento
-    c.DocumentFilter<CustomOrderDocumentFilter>();
-
-    // Excluir rutas específicas si es necesario
-    c.DocumentFilter<ExcludeRoutesDocumentFilter>();
+    c.DocumentFilter<CustomOrderDocumentFilter>(); // Añadir el filtro de orden de documento
+    c.DocumentFilter<ExcludeRoutesDocumentFilter>();// Excluir rutas específicas si es necesario
 });
 
 
@@ -192,8 +185,6 @@ public class ExcludeRoutesDocumentFilter : IDocumentFilter
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
         var excludedRoutes = new[] { "/outputcache/{region}", "/configuration", "/api/secure/data", "/v1/Swagger" };
-
-
         foreach (var route in excludedRoutes)
         {
             var key = swaggerDoc.Paths.Keys.FirstOrDefault(k => k.Contains(route));
@@ -218,7 +209,6 @@ public class CustomOrderDocumentFilter : IDocumentFilter
             }
             return 1; // Asigna a los demás un valor mayor para que vayan después
         }).ToDictionary(x => x.Key, x => x.Value);
-
         // Reemplaza las rutas en el documento con las rutas ordenadas
         swaggerDoc.Paths = new OpenApiPaths();
         foreach (var path in orderedPaths)

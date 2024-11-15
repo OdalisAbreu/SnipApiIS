@@ -10,7 +10,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("https://localhost:7180") // Cambia a tu dominio autorizado
+        policy.WithOrigins("https://localhost:7180") // Cambiar al dominio autorizado
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
