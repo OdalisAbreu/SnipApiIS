@@ -3,6 +3,7 @@ using IdentityServer4.Models;
 using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SnipAuthServerV1.Validators;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 
@@ -64,8 +65,6 @@ builder.Services.AddIdentityServer()
     .AddInMemoryPersistedGrants()
     .AddSigningCredential(signingCert);
 
-builder.Services.AddTransient<IResourceOwnerPasswordValidator, LegacyResourceOwnerPasswordValidator>();
-
 // Configurar el middleware de validación de token
 builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
     .AddIdentityServerAuthentication(options =>
@@ -77,6 +76,7 @@ builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.Authenti
     });
 
 builder.Services.AddControllers();
+builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
 
 var app = builder.Build();
 
@@ -86,26 +86,3 @@ app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-
-// Clase personalizada para validar Resource Owner Password
-public class LegacyResourceOwnerPasswordValidator : IResourceOwnerPasswordValidator
-{
-    public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
-    {
-        if (context.UserName == "test_user" && context.Password == "password")
-        {
-            context.Result = new GrantValidationResult(
-                subject: "user_id",
-                authenticationMethod: "custom",
-                claims: new[] { new Claim("role", "user") }
-            );
-        }
-        else
-        {
-            context.Result = new GrantValidationResult(
-                TokenRequestErrors.InvalidGrant,
-                "Invalid username or password."
-            );
-        }
-    }
-}
