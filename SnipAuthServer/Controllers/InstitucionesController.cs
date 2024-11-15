@@ -7,7 +7,6 @@ namespace SnipAuthServer.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
-    [Authorize(Policy = "api1")]
     public class InstitucionesController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -20,6 +19,7 @@ namespace SnipAuthServer.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "api1")]
         public async Task<IActionResult> GetInstituciones(
             [FromQuery] int? id_institucion = null,
             [FromQuery] string? cod_inst_snip = null,
@@ -49,6 +49,12 @@ namespace SnipAuthServer.Controllers
             // Construir la consulta SQL dinámica
             var query = "SELECT * FROM cla_instituciones_snip WHERE 1=1";
             var parameters = new DynamicParameters();
+
+            if (id_institucion.HasValue)
+            {
+                query += " AND id_institucion = @id_institucion";
+                parameters.Add("id_institucion", id_institucion.Value);
+            }
 
             if (!string.IsNullOrEmpty(cod_inst_snip))
             {
@@ -87,7 +93,7 @@ namespace SnipAuthServer.Controllers
             }
 
             // Registrar éxito en la base de datos y Sentry
-            _logger.LogInformation("Endpoint: GetInstituciones | Usuario: {Usuario} | Hora: {FechaHora} | Estado: Éxito", usuario, fechaHora);
+            SentrySdk.CaptureMessage($"Usuario {usuario} consultó el endpoint GetInstituciones a las {DateTime.UtcNow}");
             return Ok(result);
         }
     }
