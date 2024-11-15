@@ -3,6 +3,7 @@ using IdentityServer4.Models;
 using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 using SnipAuthServerV1.Validators;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -65,6 +66,42 @@ builder.Services.AddIdentityServer()
     .AddInMemoryPersistedGrants()
     .AddSigningCredential(signingCert);
 
+// Configuración de Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "AuthServer API",
+        Version = "v1",
+        Description = "API de Servicios"
+    });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme // Configuración de seguridad para el token de autenticación
+    {
+        Description = "Ingrese su token JWT a continuación:",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+   // c.DocumentFilter<CustomOrderDocumentFilter>(); // Añadir el filtro de orden de documento
+   // c.DocumentFilter<ExcludeRoutesDocumentFilter>();// Excluir rutas específicas si es necesario
+});
+
 // Configurar el middleware de validación de token
 builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
     .AddIdentityServerAuthentication(options =>
@@ -79,6 +116,12 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
 
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AuthServer API v1");
+});
 
 app.UseIdentityServer();
 app.UseAuthentication();
