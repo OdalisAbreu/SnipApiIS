@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using SnipAuthServerV1.Models;
 using System.Data.SqlClient;
-using System.Threading.Tasks;
+
 
 namespace SnipAuthServerV1.Controllers
 {
@@ -82,7 +82,7 @@ namespace SnipAuthServerV1.Controllers
             }
 
             var content = await response.Content.ReadAsStringAsync();
-            var tokenResponse = JsonConvert.DeserializeObject<TokenResponse>(content);
+            var tokenResponse = JsonConvert.DeserializeObject<CustomTokenResponse>(content);
 
             // Parsear la respuesta del procedimiento almacenado
             var userFields = userProcedureResponse.Split(';');
@@ -116,5 +116,43 @@ namespace SnipAuthServerV1.Controllers
 
             return Ok(customResponse);
         }
+        [HttpPost("revoke")]
+        public async Task<IActionResult> RevokeTokenFromHeader()
+        {
+            // Obtener el token del encabezado 'Authorization'
+            if (!Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
+            {
+                return BadRequest("El encabezado 'Authorization' es requerido.");
+            }
+
+            // Validar el formato del token
+            var token = authorizationHeader.ToString().Replace("Bearer ", "").Trim();
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("El token en el encabezado 'Authorization' no es válido.");
+            }
+
+            // Solicitar revocación al IdentityServer
+            var client = _httpClientFactory.CreateClient();
+            var revokeRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7079/connect/revocation")
+            {
+                Content = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("token", token),
+                new KeyValuePair<string, string>("token_type_hint", "access_token"), // Asume que es un access token
+                new KeyValuePair<string, string>("client_id", "client_id"),
+                new KeyValuePair<string, string>("client_secret", "client_secret")
+            })
+            };
+
+            var response = await client.SendAsync(revokeRequestMessage);
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode, "Error al revocar el token.");
+            }
+
+            return Ok("Token revocado exitosamente.");
+        }
     }
+
 }

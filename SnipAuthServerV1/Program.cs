@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using SnipAuthServerV1.Validators;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 
@@ -77,12 +78,12 @@ builder.Services.AddSwaggerGen(c =>
     });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme // Configuración de seguridad para el token de autenticación
     {
-        Description = "Ingrese su token JWT a continuación:",
+        Description = "Ingrese su token a continuación:",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Scheme = "Bearer",
-        BearerFormat = "JWT"
+       // BearerFormat = "JWT"
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -98,8 +99,7 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-   // c.DocumentFilter<CustomOrderDocumentFilter>(); // Añadir el filtro de orden de documento
-   // c.DocumentFilter<ExcludeRoutesDocumentFilter>();// Excluir rutas específicas si es necesario
+    c.DocumentFilter<CustomOrderDocumentFilter>(); // Añadir el filtro de orden de documento
 });
 
 // Configurar el middleware de validación de token
@@ -129,3 +129,24 @@ app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
+public class CustomOrderDocumentFilter : IDocumentFilter
+{
+    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+    {
+        // Obtiene todas las rutas y las reordena con base en tu lógica
+        var orderedPaths = swaggerDoc.Paths.OrderBy(path =>
+        {
+            if (path.Key.Contains("/api/v1/Login"))
+            {
+                return 0; // Asigna el primer lugar al endpoint de Login
+            }
+            return 1; // Asigna a los demás un valor mayor para que vayan después
+        }).ToDictionary(x => x.Key, x => x.Value);
+        // Reemplaza las rutas en el documento con las rutas ordenadas
+        swaggerDoc.Paths = new OpenApiPaths();
+        foreach (var path in orderedPaths)
+        {
+            swaggerDoc.Paths.Add(path.Key, path.Value);
+        }
+    }
+}

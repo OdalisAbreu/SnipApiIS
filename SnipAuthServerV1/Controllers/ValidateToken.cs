@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 
-namespace SnipAuthServerV1.Controllers
+/*namespace SnipAuthServerV1.Controllers
 {
     [Route("api/token")]
     [ApiController]
@@ -20,4 +20,4 @@ namespace SnipAuthServerV1.Controllers
             });
         }
     }
-}
+}*/

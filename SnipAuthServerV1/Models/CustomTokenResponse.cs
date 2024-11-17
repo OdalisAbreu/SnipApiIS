@@ -2,7 +2,7 @@
 
 namespace SnipAuthServerV1.Models
 {
-    public class TokenResponse
+    public class CustomTokenResponse
     {
         [JsonProperty("access_token")]
         public string AccessToken { get; set; }
