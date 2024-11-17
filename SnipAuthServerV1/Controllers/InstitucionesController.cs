@@ -91,9 +91,7 @@ namespace SnipAuthServerV1.Controllers
                     flg_habilitado = institucion.activo == "S"
                 });
             }
-
-            // Registrar éxito en la base de datos y Sentry
-            // SentrySdk.CaptureMessage($"Usuario {usuario} consultó el endpoint GetInstituciones a las {DateTime.UtcNow}");
+            SentrySdk.CaptureMessage($"Consulta el endpoint GetInstituciones a las {DateTime.UtcNow}");
             return Ok(result);
         }
     }

@@ -11,6 +11,8 @@ using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+//Buscar el certificado generado
 var certStore = new X509Store(StoreName.My, StoreLocation.CurrentUser);
 certStore.Open(OpenFlags.ReadOnly);
 var signingCert = certStore.Certificates
@@ -23,6 +25,18 @@ if (signingCert == null)
 {
     throw new Exception("Certificado no encontrado en el almacén.");
 }
+
+// Configuración de CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins("https://localhost:7079") // Cambiar al dominio autorizado
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 // Configuración de IdentityServer4
 builder.Services.AddIdentityServer()
@@ -112,11 +126,22 @@ builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.Authenti
         options.RequireHttpsMetadata = false; // Solo usa 'false' para desarrollo
     });
 
+// Configurar Sentry usando la configuración de appsettings.json
+builder.WebHost.UseSentry(options =>
+{
+    options.Dsn = builder.Configuration["Sentry:Dsn"];
+    options.Debug = bool.Parse(builder.Configuration["Sentry:Debug"]);
+    options.TracesSampleRate = double.Parse(builder.Configuration["Sentry:TracesSampleRate"]);
+    options.AttachStacktrace = bool.Parse(builder.Configuration["Sentry:AttachStacktrace"]);
+});
+
 builder.Services.AddControllers();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
 
 var app = builder.Build();
 
+
+app.UseCors("CorsPolicy"); // Aplicar la política de CORS
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -133,7 +158,6 @@ public class CustomOrderDocumentFilter : IDocumentFilter
 {
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
-        // Obtiene todas las rutas y las reordena con base en tu lógica
         var orderedPaths = swaggerDoc.Paths.OrderBy(path =>
         {
             if (path.Key.Contains("/api/v1/Login"))

@@ -113,7 +113,7 @@ namespace SnipAuthServerV1.Controllers
                 Cargo = userFields[12],
                 EsAdministrador = int.Parse(userFields[13])
             };
-
+            SentrySdk.CaptureMessage($"Usuario {loginRequest.Username} inició sesión a las {DateTime.UtcNow}");
             return Ok(customResponse);
         }
         [HttpPost("revoke")]
@@ -148,9 +148,10 @@ namespace SnipAuthServerV1.Controllers
             var response = await client.SendAsync(revokeRequestMessage);
             if (!response.IsSuccessStatusCode)
             {
+                SentrySdk.CaptureMessage("Error al revocar el token.");
                 return StatusCode((int)response.StatusCode, "Error al revocar el token.");
             }
-
+            SentrySdk.CaptureMessage($"Token de usuario revocado a las {DateTime.UtcNow}");
             return Ok("Token revocado exitosamente.");
         }
     }
