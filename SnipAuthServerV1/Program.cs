@@ -1,13 +1,12 @@
 using IdentityServer4.AccessTokenValidation;
 using IdentityServer4.Models;
 using IdentityServer4.Validation;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using IdentityServer4.Stores;
 using Microsoft.OpenApi.Models;
 using SnipAuthServerV1.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using SnipAuthServerV1.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +30,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("https://localhost:7079") // Cambiar al dominio autorizado
+        policy.WithOrigins("https://localhost:7079") 
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -137,6 +136,7 @@ builder.WebHost.UseSentry(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
+builder.Services.AddSingleton<IHostedService, TokenCleanupJob>();
 
 var app = builder.Build();
 
