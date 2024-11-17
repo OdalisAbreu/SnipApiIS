@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Logging;
 using SnipAuthServer.Services;
 using SnipAuthServer.Middleware;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Security.Cryptography.X509Certificates;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,19 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, CustomResourceOwnerPasswordValidator>();
 builder.Services.AddSingleton<TokenRevocationService>();
+
+var certStore = new X509Store(StoreName.My, StoreLocation.CurrentUser); // Para usuario actual
+certStore.Open(OpenFlags.ReadOnly);
+var signingCert = certStore.Certificates
+    .Find(X509FindType.FindByThumbprint, "b7f43ed2d387ec300b166869ca8d4c907cca4db7", validOnly: false)
+    .OfType<X509Certificate2>()
+    .FirstOrDefault();
+certStore.Close();
+
+if (signingCert == null)
+{
+    throw new Exception("Certificado no encontrado en el almacén.");
+}
 
 // Configuración de CORS
 builder.Services.AddCors(options =>
