@@ -6,7 +6,7 @@ using Dapper;
 namespace SnipAuthServerV1.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("servicios/v1/snip/cla/[controller]")]
     public class InstitucionesController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -79,7 +79,7 @@ namespace SnipAuthServerV1.Controllers
             {
                 result.Add(new
                 {
-                    Id_institucion = institucion.id_institucion,
+                    id_institucion = institucion.id_institucion,
                     des_institucion = institucion.descripcion,
                     siglas_institucion = institucion.sigla,
                     ins_cod_capitulo = institucion.capitulo,

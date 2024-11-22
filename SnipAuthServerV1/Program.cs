@@ -30,7 +30,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("https://localhost:7079") 
+        policy.WithOrigins(builder.Configuration["Access:UrlBase"]) 
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -43,7 +43,7 @@ builder.Services.AddIdentityServer()
     {
         new ApiResource("api_resource", "API Resource")
         {
-            ApiSecrets = { new Secret("secret1".Sha256()) },
+            ApiSecrets = { new Secret(builder.Configuration["Access:ApiSecret"].Sha256()) },
             Scopes = { "api_scope" }
         },
         new ApiResource("client_id", "Introspection Client")
@@ -60,14 +60,14 @@ builder.Services.AddIdentityServer()
     {
         new Client
         {
-            ClientId = "client_id",
+            ClientId = builder.Configuration["Access:ClientId"],
             AllowedGrantTypes = GrantTypes.ResourceOwnerPasswordAndClientCredentials,
-            ClientSecrets = { new Secret("client_secret".Sha256()) },
+            ClientSecrets = { new Secret(builder.Configuration["Access:ClientSecrets"].Sha256()) },
             AllowedScopes = { "api_resource", "api_scope" },
             AllowOfflineAccess = true,
             AccessTokenType = AccessTokenType.Reference,
-            AccessTokenLifetime = 60 * 10, // 10 minutos
-            IdentityTokenLifetime = 60 * 10 // 10 minutos
+            AccessTokenLifetime = 60 * 30,
+            IdentityTokenLifetime = 60 * 30 
         }
     })
     .AddDeveloperSigningCredential()
@@ -119,9 +119,9 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
     .AddIdentityServerAuthentication(options =>
     {
-        options.Authority = "https://localhost:7079"; // Cambia al URL de tu IdentityServer
+        options.Authority = builder.Configuration["Access:UrlBase"]; // Cambia al URL de tu IdentityServer
         options.ApiName = "api_resource"; // El nombre del recurso API definido en IdentityServer
-        options.ApiSecret = "secret1"; // El secreto configurado para el API
+        options.ApiSecret = builder.Configuration["Access:ApiSecret"]; // El secreto configurado para el API
         options.RequireHttpsMetadata = false; // Solo usa 'false' para desarrollo
     });
 
@@ -166,7 +166,6 @@ public class CustomOrderDocumentFilter : IDocumentFilter
             }
             return 1; // Asigna a los demás un valor mayor para que vayan después
         }).ToDictionary(x => x.Key, x => x.Value);
-        // Reemplaza las rutas en el documento con las rutas ordenadas
         swaggerDoc.Paths = new OpenApiPaths();
         foreach (var path in orderedPaths)
         {
