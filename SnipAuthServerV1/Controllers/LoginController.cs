@@ -7,7 +7,7 @@ using System.Data.SqlClient;
 namespace SnipAuthServerV1.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("servicios/v1/[controller]")]
     public class LoginController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;

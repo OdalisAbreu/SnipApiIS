@@ -1,0 +1,73 @@
+﻿using Dapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System.Data.SqlClient;
+
+namespace SnipAuthServerV1.Controllers
+{
+        [ApiController]
+        [Route("servicios/v1/snip/cla/[controller]")]
+    public class GeograficosController : Controller
+    {
+
+        private readonly IConfiguration _configuration;
+        public GeograficosController(IConfiguration configuration)
+         {
+            _configuration = configuration;
+        }
+
+        [HttpGet]
+        [Authorize]
+
+        public async Task<IActionResult> geograficos([FromQuery] int? id_geografico = null)
+        {
+            var fechaHora = DateTime.Now;
+            var usuario = User.Identity?.Name ?? "Usuario anónimo";
+
+            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+
+            var query = "SELECT * FROM vw_cla_geografico WHERE 1=1";
+            var parameters = new DynamicParameters();
+
+
+            if (id_geografico.HasValue)
+            {
+                query += "AND id_clageo = @id_geografico";
+                parameters.Add("id_geografico", id_geografico.Value);
+            }
+
+            var geograficos = await connection.QueryAsync(query, parameters);
+
+            var result = new List<object>();
+            foreach (var geografico in geograficos)
+            {
+                result.Add(new
+                {
+                    id_geografico = geografico.id_clageo,
+                    des_geografico = geografico.descripcion,
+                    id_area_influencia = geografico.area_influencia,
+                    des_area_influencia = geografico.area_influencia_txt,
+                    cod_provincia = geografico.cod_provincia,
+                    cod_municipio = geografico.cod_municipio,
+                    flg_habilitado = geografico.activo == "S" ? true : false
+                });
+            }
+            var totalRegistros = result.Count;
+            // Obtener la dirección IP del usuario
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            SentrySdk.CaptureMessage($"Consulta el endpoint Topologias a las {DateTime.Now}, desde IP {ipAddress}");
+
+            var objet = new List<object>();
+            objet.Add(new
+            {
+                total_registros = totalRegistros,
+                cla_geograficos = new List<object>(result),
+            });
+            return Ok(objet[0]);
+
+            //return Ok(result);
+        }
+
+    }
+}

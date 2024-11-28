@@ -6,7 +6,7 @@ using Dapper;
 namespace SnipAuthServerV1.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("servicios/v1/snip/cla/[controller]")]
     public class InstitucionesController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -79,7 +79,7 @@ namespace SnipAuthServerV1.Controllers
             {
                 result.Add(new
                 {
-                    Id_institucion = institucion.id_institucion,
+                    id_institucion = institucion.id_institucion,
                     des_institucion = institucion.descripcion,
                     siglas_institucion = institucion.sigla,
                     ins_cod_capitulo = institucion.capitulo,
@@ -91,8 +91,23 @@ namespace SnipAuthServerV1.Controllers
                     flg_habilitado = institucion.activo == "S"
                 });
             }
-            SentrySdk.CaptureMessage($"Consulta el endpoint GetInstituciones a las {DateTime.UtcNow}");
-            return Ok(result);
+
+            // Obtener el total de registros
+            var totalRegistros = result.Count;
+
+            // Obtener la dirección IP del usuario
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            SentrySdk.CaptureMessage($"Consulta al endpoint GetInstituciones desde IP {ipAddress} a las {DateTime.UtcNow}");
+            var objet = new List<object>();
+            objet.Add(new
+            {
+                total_registros = totalRegistros,
+                cla_instituciones = new List<object>(result),
+            });
+            return Ok(objet[0]);
+
+            //return Ok(result);
         }
     }
 }

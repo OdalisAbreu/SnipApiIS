@@ -1,65 +1,77 @@
 {
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:7287" // El puerto de tu ApiGateway
+    "BaseUrl": "https://localhost:7079" // El puerto de tu ApiGateway
   },
   "Routes": [
     {
-      "UpstreamPathTemplate": "/connect/token",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/connect/token",
-      "DownstreamScheme": "https",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 7180
-        }
-      ]
-    },
-    {
       "UpstreamPathTemplate": "/api/v1/Login",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/api/v1/Login",
+      "DownstreamPathTemplate": "/servicios/v1/Login",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7180
+          "Port": 7079
         }
       ]
     },
     {
       "UpstreamPathTemplate": "/api/v1/Login/revokeToken",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/api/v1/Login/revokeToken",
+      "DownstreamPathTemplate": "/servicios/v1/Login/revoke",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7180
+          "Port": 7079
         }
       ]
     },
     {
-      "UpstreamPathTemplate": "/api/v1/Instituciones",
+      "UpstreamPathTemplate": "/api/v1/cla/componentes",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/api/v1/Instituciones",
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/Componentes",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7180
+          "Port": 7079
         }
       ]
     },
     {
-      "UpstreamPathTemplate": "/v1/Swagger",
+      "UpstreamPathTemplate": "/api/v1/cla/geograficos",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/v1/Swagger",
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/Geograficos",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7180
+          "Port": 7079
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/cla/Instituciones",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/Instituciones",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7079
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/cla/tipologias",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/Tipologias",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7079
         }
       ]
     }
