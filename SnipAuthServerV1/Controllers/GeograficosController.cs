@@ -53,12 +53,15 @@ namespace SnipAuthServerV1.Controllers
                     flg_habilitado = geografico.activo == "S" ? true : false
                 });
             }
-
-            SentrySdk.CaptureMessage($"Consulta el endpoint Topologias a las {DateTime.Now}");
+            var totalRegistros = result.Count;
+            // Obtener la dirección IP del usuario
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            SentrySdk.CaptureMessage($"Consulta el endpoint Topologias a las {DateTime.Now}, desde IP {ipAddress}");
 
             var objet = new List<object>();
             objet.Add(new
             {
+                total_registros = totalRegistros,
                 cla_geograficos = new List<object>(result),
             });
             return Ok(objet[0]);

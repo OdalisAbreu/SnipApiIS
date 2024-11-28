@@ -160,7 +160,7 @@ public class CustomOrderDocumentFilter : IDocumentFilter
     {
         var orderedPaths = swaggerDoc.Paths.OrderBy(path =>
         {
-            if (path.Key.Contains("/api/v1/Login"))
+            if (path.Key.Contains("/servicios/v1/Login"))
             {
                 return 0; // Asigna el primer lugar al endpoint de Login
             }
