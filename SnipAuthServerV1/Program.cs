@@ -7,6 +7,9 @@ using SnipAuthServerV1.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Security.Cryptography.X509Certificates;
 using SnipAuthServerV1.Jobs;
+using SnipAuthServerV1.Services;
+using System.Data;
+using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +38,12 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
+});
+
+builder.Services.AddScoped<IDbConnection>(sp =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    return new SqlConnection(connectionString);
 });
 
 // Configuración de IdentityServer4
@@ -137,6 +146,9 @@ builder.WebHost.UseSentry(options =>
 builder.Services.AddControllers();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
 builder.Services.AddSingleton<IHostedService, TokenCleanupJob>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ExternalApiService>();
+
 
 var app = builder.Build();
 
@@ -147,7 +159,6 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "AuthServer API v1");
 });
-
 app.UseIdentityServer();
 app.UseAuthentication();
 app.UseAuthorization();

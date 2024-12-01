@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SnipApiGateway", "SnipApiGa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SnipAuthServerV1", "SnipAuthServerV1\SnipAuthServerV1.csproj", "{33AE1C30-F63C-4FF9-85CF-393895F0BD8F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SigefApi", "SigefApi\SigefApi.csproj", "{21F6D3CB-7DAE-4A63-AFAF-DA7205DAC7C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{33AE1C30-F63C-4FF9-85CF-393895F0BD8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33AE1C30-F63C-4FF9-85CF-393895F0BD8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{33AE1C30-F63C-4FF9-85CF-393895F0BD8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21F6D3CB-7DAE-4A63-AFAF-DA7205DAC7C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21F6D3CB-7DAE-4A63-AFAF-DA7205DAC7C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21F6D3CB-7DAE-4A63-AFAF-DA7205DAC7C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21F6D3CB-7DAE-4A63-AFAF-DA7205DAC7C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

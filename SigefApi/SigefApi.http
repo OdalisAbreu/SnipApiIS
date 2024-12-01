@@ -1,0 +1,6 @@
+@SigefApi_HostAddress = http://localhost:5240
+
+GET {{SigefApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
