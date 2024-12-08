@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.OpenApi.Models;
 using System.Net.Http.Headers;
 using IdentityServer4.AccessTokenValidation;
+using ServiciosSnip.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,10 +57,10 @@ builder.Services.AddSwaggerGen(c =>
 
 // Agregar autorización
 builder.Services.AddAuthorization();
-
 // Agregar controladores
 builder.Services.AddControllers();
-
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ExternalApiService>();
 
 var app = builder.Build();
 

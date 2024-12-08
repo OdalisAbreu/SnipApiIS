@@ -4,20 +4,20 @@
   },
   "SwaggerEndPoints": [
     {
-      "Key": "servicios",
+      "Key": "autenticacion",
       "Config": [
         {
-          "Name": "Servicios API",
+          "Name": "Autenticación API",
           "Version": "v1",
           "Url": "https://localhost:7079/swagger/v1/swagger.json"
         }
       ]
     },
     {
-      "Key": "componentes",
+      "Key": "servicios",
       "Config": [
         {
-          "Name": "Componentes API",
+          "Name": "Servicios API",
           "Version": "v1",
           "Url": "https://localhost:7239/swagger/v1/swagger.json"
         }
@@ -36,7 +36,7 @@
           "Port": 7079
         }
       ],
-      "SwaggerKey": "servicios"
+      "SwaggerKey": "autenticacion"
     },
     {
       "UpstreamPathTemplate": "/api/v1/Login/revokeToken",
@@ -49,7 +49,7 @@
           "Port": 7079
         }
       ],
-      "SwaggerKey": "servicios"
+      "SwaggerKey": "autenticacion"
     },
     {
       "UpstreamPathTemplate": "/api/v1/cla/componentes",

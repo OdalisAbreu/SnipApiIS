@@ -147,7 +147,6 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
 builder.Services.AddSingleton<IHostedService, TokenCleanupJob>();
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<ExternalApiService>();
 
 
 var app = builder.Build();
