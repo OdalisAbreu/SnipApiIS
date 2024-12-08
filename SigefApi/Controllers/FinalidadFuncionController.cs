@@ -1,114 +1,145 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SigefApi.Controllers
 {
     [ApiController]
-    [Route("api/clasificadores/sigeft/FinalidadFuncion")]
+    [Route("api/clasificadores/sigeft/fuente")]
     [Authorize] // Requiere token Bearer
-    public class FinalidadFuncionController : ControllerBase
+    public class FuenteController : ControllerBase
     {
-        // Data Dumi para clasificador de finalidad y función
-        private static readonly List<FinalidadFuncion> Clasificadores = new()
+        // Data Dumi para fuentes
+        private static readonly List<Fuente> Clasificadores = new()
         {
-            new FinalidadFuncion
+            new Fuente
             {
-                CodFinalidad = "1",
-                DescripcionFinalidad = "Servicio Público Generales",
-                CodFuncion = "11",
-                DescripcionFuncion = "Administración General",
-                CodSubFuncion = "1101",
-                DescripcionSubFuncion = "Órganos Ejecutivos y Legislativos",
-                Estado = "habilitado",
-                Condicion = "vigente"
+                cod_finalidad = "1",
+                descripcion_finalidad = "Fuente Internas",
+                cod_funcion = "10",
+                descripcion_funcion = "Fuente General",
+                cod_sub_funcion = "0100",
+                descripcion_sub_funcion = "Fuente Específica 1",
+                estado = "habilitado",
+                condicion = "vigente"
             },
-            new FinalidadFuncion
+            new Fuente
             {
-                CodFinalidad = "2",
-                DescripcionFinalidad = "Defensa y Seguridad",
-                CodFuncion = "21",
-                DescripcionFuncion = "Seguridad Pública",
-                CodSubFuncion = "2101",
-                DescripcionSubFuncion = "Defensa Nacional",
-                Estado = "habilitado",
-                Condicion = "vigente"
+                cod_finalidad = "1",
+                descripcion_finalidad = "Fuente Internas",
+                cod_funcion = "20",
+                descripcion_funcion = "Fuente Especial",
+                cod_sub_funcion = "0200",
+                descripcion_sub_funcion = "Fuente Específica 2",
+                estado = "habilitado",
+                condicion = "vigente"
             },
-            new FinalidadFuncion
+            new Fuente
             {
-                CodFinalidad = "3",
-                DescripcionFinalidad = "Educación",
-                CodFuncion = "31",
-                DescripcionFuncion = "Servicios Educativos",
-                CodSubFuncion = "3101",
-                DescripcionSubFuncion = "Educación Básica",
-                Estado = "deshabilitado",
-                Condicion = "no vigente"
+                cod_finalidad = "2",
+                descripcion_finalidad = "Fuente Externas",
+                cod_funcion = "30",
+                descripcion_funcion = "Fuente de Cooperación",
+                cod_sub_funcion = "0300",
+                descripcion_sub_funcion = "Fuente Específica 3",
+                estado = "habilitado",
+                condicion = "vigente"
             }
         };
 
-        // GET ALL con paginación y filtros
+        // GET todos los clasificadores o filtrados por cod_fte_gral
         [HttpGet]
-        public IActionResult GetClasificadores(
-            [FromQuery] int pagina = 1,
-            [FromQuery] int tamanoPagina = 10,
-            [FromQuery] string codSuFuncion = null,
-            [FromQuery] string estado = "vigente")
+        public IActionResult GetAllClasificadores([FromQuery] string estado = "vigente")
         {
-            // Filtrar por código de sub-función y estado
-            var query = Clasificadores.AsQueryable();
-            if (!string.IsNullOrEmpty(codSuFuncion))
+            try
             {
-                query = query.Where(c => c.CodSubFuncion == codSuFuncion);
-            }
-            if (!string.IsNullOrEmpty(estado))
-            {
-                query = query.Where(c => c.Condicion == estado && c.Estado == "habilitado");
-            }
+                // Filtrar por estado
+                var query = Clasificadores.AsQueryable();
 
-            // Aplicar paginación
-            var totalRegistros = query.Count();
-            var resultado = query
-                .Skip((pagina - 1) * tamanoPagina)
-                .Take(tamanoPagina)
-                .ToList();
+                if (!string.IsNullOrEmpty(estado))
+                {
+                    query = query.Where(f => f.estado == "habilitado" && f.condicion == estado);
+                }
 
-            return Ok(new
+                var resultado = query.ToList();
+
+                return Ok(new
+                {
+                    totalRegistros = resultado.Count,
+                    datos = resultado
+                });
+            }
+            catch (Exception ex)
             {
-                totalRegistros,
-                pagina,
-                tamanoPagina,
-                datos = resultado
-            });
+                return StatusCode(500, new { mensaje = "Ocurrió un error interno.", detalle = ex.Message });
+            }
         }
 
-        // GET específico por código de sub-función
-        [HttpGet("{cod_su_funcion}")]
-        public IActionResult GetClasificadorPorCodigo(string cod_su_funcion)
+        // GET con cod_fte_gral como parámetro
+        [HttpGet("{cod_fte_gral}")]
+        public IActionResult GetFuenteDetails(string cod_fte_gral)
         {
-            var clasificador = Clasificadores
-                .FirstOrDefault(c => c.CodSubFuncion == cod_su_funcion && c.Estado == "habilitado" && c.Condicion == "vigente");
-
-            if (clasificador == null)
+            try
             {
-                return NotFound(new { mensaje = "Clasificador no encontrado o no vigente." });
-            }
+                // Validar longitud mínima de cod_fte_gral
+                if (string.IsNullOrEmpty(cod_fte_gral) || cod_fte_gral.Length != 7)
+                {
+                    return BadRequest(new { mensaje = "El parámetro cod_fte_gral debe tener 7 caracteres." });
+                }
+                // Descomponer cod_fte_gral
+                var cod_finalidad = cod_fte_gral.Substring(0, 1);
+                var cod_funcion = cod_fte_gral.Substring(1, 2);
+                var cod_sub_funcion = cod_fte_gral.Substring(3, 4);
+            
 
-            return Ok(clasificador);
+                // Buscar en la data dumi
+                var fuente = Clasificadores.FirstOrDefault(f =>
+                    f.cod_finalidad == cod_finalidad &&
+                    f.cod_funcion == cod_funcion &&
+                    f.cod_sub_funcion == cod_sub_funcion &&
+                    f.estado == "habilitado" &&
+                    f.condicion == "vigente");
+
+                if (fuente == null)
+                {
+                    return NotFound(new { mensaje = "Fuente no encontrada o no vigente." });
+                }
+
+                // Crear objeto de respuesta
+                var resultado = new
+                {
+                    cod_finalidad,
+                    fuente.descripcion_finalidad,
+                    cod_funcion,
+                    fuente.descripcion_funcion,
+                    cod_sub_funcion,
+                    fuente.descripcion_sub_funcion,
+                    fuente.estado,
+                    fuente.condicion
+                };
+
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Ocurrió un error interno.", detalle = ex.Message });
+            }
         }
     }
 
-    // Modelo para clasificador de finalidad y función
-    public class FinalidadFuncion
+    // Modelo para clasificador de fuentes
+    public class Fuente
     {
-        public string CodFinalidad { get; set; }
-        public string DescripcionFinalidad { get; set; }
-        public string CodFuncion { get; set; }
-        public string DescripcionFuncion { get; set; }
-        public string CodSubFuncion { get; set; }
-        public string DescripcionSubFuncion { get; set; }
-        public string Estado { get; set; }
-        public string Condicion { get; set; }
+        public string cod_finalidad { get; set; }
+        public string descripcion_finalidad { get; set; }
+        public string cod_funcion { get; set; }
+        public string descripcion_funcion { get; set; }
+        public string cod_sub_funcion { get; set; }
+        public string descripcion_sub_funcion { get; set; }
+        public string estado { get; set; }
+        public string condicion { get; set; }
     }
 }

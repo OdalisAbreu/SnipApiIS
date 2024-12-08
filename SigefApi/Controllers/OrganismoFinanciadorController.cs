@@ -15,70 +15,57 @@ namespace SigefApi.Controllers
         {
             new OrganismoFinanciador
             {
-                CodGrupo = "1",
-                DescripcionGrupo = "Organismos internos",
-                CodSubGrupo = "2",
-                DescripcionSubGrupo = "Otros organismos internos",
-                CodOrgFin = "102",
-                DescripcionOrgFin = "Fondos Propios",
-                Estado = "habilitado",
-                Condicion = "vigente"
+                cod_grupo = "1",
+                descripcion_grupo = "Organismos internos",
+                cod_sub_grupo = "2",
+                descripcion_subgrupo = "Otros organismos internos",
+                cod_org_fin = "131",
+                descripcion_org_fin = "Fondos Propios",
+                estado = "habilitado",
+                condicion = "vigente"
             },
             new OrganismoFinanciador
             {
-                CodGrupo = "1",
-                DescripcionGrupo = "Organismos externos",
-                CodSubGrupo = "3",
-                DescripcionSubGrupo = "Organismos internacionales",
-                CodOrgFin = "201",
-                DescripcionOrgFin = "Préstamos Externos",
-                Estado = "habilitado",
-                Condicion = "vigente"
+                cod_grupo = "1",
+                descripcion_grupo = "Organismos externos",
+                cod_sub_grupo = "2",
+                descripcion_subgrupo = "Organismos internacionales",
+                cod_org_fin = "132",
+                descripcion_org_fin = "Préstamos Externos",
+                estado = "habilitado",
+                condicion = "vigente"
             },
             new OrganismoFinanciador
             {
-                CodGrupo = "2",
-                DescripcionGrupo = "Organismos internos",
-                CodSubGrupo = "4",
-                DescripcionSubGrupo = "Organismos descentralizados",
-                CodOrgFin = "301",
-                DescripcionOrgFin = "Transferencias Internas",
-                Estado = "deshabilitado",
-                Condicion = "no vigente"
+                cod_grupo = "1",
+                descripcion_grupo = "Organismos internos",
+                cod_sub_grupo = "2",
+                descripcion_subgrupo = "Organismos descentralizados",
+                cod_org_fin = "133",
+                descripcion_org_fin = "Transferencias Internas",
+                estado = "deshabilitado",
+                condicion = "no vigente"
             }
         };
 
         // GET ALL con paginación y filtros
         [HttpGet]
         public IActionResult GetClasificadores(
-            [FromQuery] int pagina = 1,
-            [FromQuery] int tamanoPagina = 10,
-            [FromQuery] string Idcod_orgfin = null,
             [FromQuery] string estado = "vigente")
         {
-            // Filtrar por código de organismo financiador y estado
+            // Filtrar por estado
             var query = Clasificadores.AsQueryable();
-            if (!string.IsNullOrEmpty(Idcod_orgfin))
-            {
-                query = query.Where(c => c.CodOrgFin == Idcod_orgfin);
-            }
+
             if (!string.IsNullOrEmpty(estado))
             {
-                query = query.Where(c => c.Condicion == estado && c.Estado == "habilitado");
+                query = query.Where(f => f.estado == "habilitado" && f.condicion == estado);
             }
 
-            // Aplicar paginación
-            var totalRegistros = query.Count();
-            var resultado = query
-                .Skip((pagina - 1) * tamanoPagina)
-                .Take(tamanoPagina)
-                .ToList();
+            var resultado = query.ToList();
 
             return Ok(new
             {
-                totalRegistros,
-                pagina,
-                tamanoPagina,
+                totalRegistros = resultado.Count,
                 datos = resultado
             });
         }
@@ -87,8 +74,23 @@ namespace SigefApi.Controllers
         [HttpGet("{Idcod_orgfin}")]
         public IActionResult GetClasificadorPorCodigo(string Idcod_orgfin)
         {
-            var clasificador = Clasificadores
-                .FirstOrDefault(c => c.CodOrgFin == Idcod_orgfin && c.Estado == "habilitado" && c.Condicion == "vigente");
+            if (string.IsNullOrEmpty(Idcod_orgfin) || Idcod_orgfin.Length != 5)
+            {
+                return BadRequest(new { mensaje = "El parámetro cod_fte_gral debe tener 5 caracteres." });
+            }
+
+            var cod_grupo = Idcod_orgfin.Substring(0, 1);
+            var cod_sub_grupo = Idcod_orgfin.Substring(1, 1);
+            var cod_org_fin = Idcod_orgfin.Substring(2, 3);
+
+
+
+            var clasificador = Clasificadores.FirstOrDefault(f =>
+              f.cod_grupo == cod_grupo &&
+              f.cod_sub_grupo == cod_sub_grupo &&
+              f.cod_org_fin == cod_org_fin &&
+              f.estado == "habilitado" &&
+              f.condicion == "vigente");
 
             if (clasificador == null)
             {
@@ -102,13 +104,13 @@ namespace SigefApi.Controllers
     // Modelo para clasificador de organismos financiadores
     public class OrganismoFinanciador
     {
-        public string CodGrupo { get; set; }
-        public string DescripcionGrupo { get; set; }
-        public string CodSubGrupo { get; set; }
-        public string DescripcionSubGrupo { get; set; }
-        public string CodOrgFin { get; set; }
-        public string DescripcionOrgFin { get; set; }
-        public string Estado { get; set; }
-        public string Condicion { get; set; }
+        public string cod_grupo { get; set; }
+        public string descripcion_grupo { get; set; }
+        public string cod_sub_grupo { get; set; }
+        public string descripcion_subgrupo { get; set; }
+        public string cod_org_fin { get; set; }
+        public string descripcion_org_fin { get; set; }
+        public string estado { get; set; }
+        public string condicion { get; set; }
     }
 }

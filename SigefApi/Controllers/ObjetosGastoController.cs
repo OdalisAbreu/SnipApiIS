@@ -15,82 +15,69 @@ namespace SigefApi.Controllers
         {
             new ObjetoGasto
             {
-                CodTipo = "2",
-                DescripcionServiciosPersonales = "Gastos",
-                CodObjeto = "3",
-                DescripcionObjeto = "Materiales y Suministros",
-                CodCuenta = "3",
-                DescripcionCuenta = "Productos de papel, cartón e impresos",
-                CodSubCuenta = "4",
-                DescripcionSubCuenta = "Libros, Revistas y Periódicos",
-                CodAuxiliar = "01",
-                DescripcionAuxiliar = "Libros, revistas y periódicos",
-                Estado = "habilitado",
-                Condicion = "vigente"
+                cod_tipo = "2",
+                descripcion_servicios_personales = "Gastos",
+                cod_objeto = "1",
+                descripcion_objeto = "Materiales y Suministros",
+                cod_cuenta = "1",
+                descripcion_cuenta = "Productos de papel, cartón e impresos",
+                cod_sub_cuenta = "1",
+                descripcion_sub_cuenta = "Libros, Revistas y Periódicos",
+                cod_auxiliar = "15",
+                descripcion_auxiliar = "Libros, revistas y periódicos",
+                estado = "habilitado",
+                condicion = "vigente"
             },
             new ObjetoGasto
             {
-                CodTipo = "2",
-                DescripcionServiciosPersonales = "Gastos",
-                CodObjeto = "4",
-                DescripcionObjeto = "Servicios Generales",
-                CodCuenta = "5",
-                DescripcionCuenta = "Mantenimiento y Reparaciones",
-                CodSubCuenta = "1",
-                DescripcionSubCuenta = "Mantenimiento de edificios",
-                CodAuxiliar = "01",
-                DescripcionAuxiliar = "Reparaciones menores",
-                Estado = "habilitado",
-                Condicion = "vigente"
+                cod_tipo = "2",
+                descripcion_servicios_personales = "Gastos",
+                cod_objeto = "1",
+                descripcion_objeto = "Servicios Generales",
+                cod_cuenta = "1",
+                descripcion_cuenta = "Mantenimiento y Reparaciones",
+                cod_sub_cuenta = "1",
+                descripcion_sub_cuenta = "Mantenimiento de edificios",
+                cod_auxiliar = "16",
+                descripcion_auxiliar = "Reparaciones menores",
+                estado = "habilitado",
+                condicion = "vigente"
             },
             new ObjetoGasto
             {
-                CodTipo = "2",
-                DescripcionServiciosPersonales = "Gastos",
-                CodObjeto = "6",
-                DescripcionObjeto = "Equipo Menor",
-                CodCuenta = "8",
-                DescripcionCuenta = "Equipo de oficina",
-                CodSubCuenta = "2",
-                DescripcionSubCuenta = "Equipo de oficina no inventariable",
-                CodAuxiliar = "03",
-                DescripcionAuxiliar = "Artículos de oficina menores",
-                Estado = "deshabilitado",
-                Condicion = "no vigente"
+                cod_tipo = "2",
+                descripcion_servicios_personales = "Gastos",
+                cod_objeto = "1",
+                descripcion_objeto = "Equipo Menor",
+                cod_cuenta = "1",
+                descripcion_cuenta = "Equipo de oficina",
+                cod_sub_cuenta = "1",
+                descripcion_sub_cuenta = "Equipo de oficina no inventariable",
+                cod_auxiliar = "17",
+                descripcion_auxiliar = "Artículos de oficina menores",
+                estado = "habilitado",
+                condicion = "vigente"
             }
         };
 
         // GET ALL con paginación y filtros
         [HttpGet]
         public IActionResult GetClasificadores(
-            [FromQuery] int pagina = 1,
-            [FromQuery] int tamanoPagina = 10,
-            [FromQuery] string codObjetal = null,
             [FromQuery] string estado = "vigente")
         {
-            // Filtrar por código de objeto y estado
+            // Filtrar por estado
             var query = Clasificadores.AsQueryable();
-            if (!string.IsNullOrEmpty(codObjetal))
-            {
-                query = query.Where(c => c.CodAuxiliar == codObjetal);
-            }
+
             if (!string.IsNullOrEmpty(estado))
             {
-                query = query.Where(c => c.Condicion == estado && c.Estado == "habilitado");
+                query = query.Where(f => f.estado == "habilitado" && f.condicion == estado);
             }
 
-            // Aplicar paginación
-            var totalRegistros = query.Count();
-            var resultado = query
-                .Skip((pagina - 1) * tamanoPagina)
-                .Take(tamanoPagina)
-                .ToList();
+            var resultado = query.ToList();
 
             return Ok(new
             {
-                totalRegistros,
-                pagina,
-                tamanoPagina,
+                totalRegistros = resultado.Count,
                 datos = resultado
             });
         }
@@ -99,8 +86,26 @@ namespace SigefApi.Controllers
         [HttpGet("{cod_objetal}")]
         public IActionResult GetClasificadorPorCodigo(string cod_objetal)
         {
-            var clasificador = Clasificadores
-                .FirstOrDefault(c => c.CodAuxiliar == cod_objetal && c.Estado == "habilitado" && c.Condicion == "vigente");
+            if (string.IsNullOrEmpty(cod_objetal) || cod_objetal.Length != 6)
+            {
+                return BadRequest(new { mensaje = "El parámetro cod_fte_gral debe tener 6 caracteres." });
+            }
+
+            var cod_tipo = cod_objetal.Substring(0, 1);
+            var cod_objeto = cod_objetal.Substring(1, 1);
+            var cod_cuenta = cod_objetal.Substring(2, 1);
+            var cod_sub_cuenta = cod_objetal.Substring(3, 1);
+            var cod_auxiliar = cod_objetal.Substring(4, 2);
+
+            var clasificador = Clasificadores.FirstOrDefault(c =>
+                c.cod_tipo == cod_tipo &&
+                c.cod_objeto == cod_objeto &&
+                c.cod_cuenta == cod_cuenta &&
+                c.cod_sub_cuenta == cod_sub_cuenta &&
+                c.cod_auxiliar == cod_auxiliar &&
+                c.estado == "habilitado" &&
+                c.condicion == "vigente");
+
 
             if (clasificador == null)
             {
@@ -114,17 +119,17 @@ namespace SigefApi.Controllers
     // Modelo para clasificador de objetos del gasto
     public class ObjetoGasto
     {
-        public string CodTipo { get; set; }
-        public string DescripcionServiciosPersonales { get; set; }
-        public string CodObjeto { get; set; }
-        public string DescripcionObjeto { get; set; }
-        public string CodCuenta { get; set; }
-        public string DescripcionCuenta { get; set; }
-        public string CodSubCuenta { get; set; }
-        public string DescripcionSubCuenta { get; set; }
-        public string CodAuxiliar { get; set; }
-        public string DescripcionAuxiliar { get; set; }
-        public string Estado { get; set; }
-        public string Condicion { get; set; }
+        public string cod_tipo { get; set; }
+        public string descripcion_servicios_personales { get; set; }
+        public string cod_objeto { get; set; }
+        public string descripcion_objeto { get; set; }
+        public string cod_cuenta { get; set; }
+        public string descripcion_cuenta { get; set; }
+        public string cod_sub_cuenta { get; set; }
+        public string descripcion_sub_cuenta { get; set; }
+        public string cod_auxiliar { get; set; }
+        public string descripcion_auxiliar { get; set; }
+        public string estado { get; set; }
+        public string condicion { get; set; }
     }
 }

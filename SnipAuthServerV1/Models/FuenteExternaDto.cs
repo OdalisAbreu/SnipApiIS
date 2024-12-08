@@ -2,13 +2,19 @@
 {
     public class FuenteExternaDto
     {
-        public string CodGrupo { get; set; }
-        public string DescripcionGrupo { get; set; }
-        public string CodFuente { get; set; }
-        public string DescripcionFuente { get; set; }
-        public string CodFuenteEspecifica { get; set; }
-        public string DescripcionFuenteEspecifica { get; set; }
-        public string Estado { get; set; }
-        public string Condicion { get; set; }
+        public string cod_grupo { get; set; }
+        public string descripcion_grupo { get; set; }
+        public string cod_fuente { get; set; }
+        public string descripcion_fuente { get; set; }
+        public string cod_fuente_especifica { get; set; }
+        public string descripcion_fuente_especifica { get; set; }
+        public string estado { get; set; }
+        public string condicion { get; set; }
+
+    }
+
+    public class FuentesExternasDto
+    {
+        public List<FuenteExternaDto>? datos { get; set; }
     }
 }
