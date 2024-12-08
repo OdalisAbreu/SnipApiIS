@@ -3,9 +3,9 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
 using System.Threading.Tasks;
-using SnipAuthServerV1.Models;
+using ServiciosSnip.Models;
 
-namespace SnipAuthServerV1.Services
+namespace ServiciosSnip.Services
 {
     public class ExternalApiService
     {

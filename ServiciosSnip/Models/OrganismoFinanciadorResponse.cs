@@ -1,4 +1,4 @@
-﻿namespace SnipAuthServerV1.Models
+﻿namespace ServiciosSnip.Models
 {
     public class OrganismoFinanciadorResponse
     {

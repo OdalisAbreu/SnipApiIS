@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SnipAuthServerV1.Models
+namespace ServiciosSnip.Models
 {
     public class FuentesResponse
     {

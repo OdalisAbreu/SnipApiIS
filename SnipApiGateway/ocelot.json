@@ -1,15 +1,25 @@
 {
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:7079"
+    "BaseUrl": "https://localhost"
   },
   "SwaggerEndPoints": [
+    {
+      "Key": "autenticacion",
+      "Config": [
+        {
+          "Name": "Autenticación API",
+          "Version": "v1",
+          "Url": "https://localhost:7079/swagger/v1/swagger.json"
+        }
+      ]
+    },
     {
       "Key": "servicios",
       "Config": [
         {
           "Name": "Servicios API",
           "Version": "v1",
-          "Url": "https://localhost:7079/swagger/v1/swagger.json" 
+          "Url": "https://localhost:7239/swagger/v1/swagger.json"
         }
       ]
     }
@@ -26,7 +36,7 @@
           "Port": 7079
         }
       ],
-      "SwaggerKey": "servicios"
+      "SwaggerKey": "autenticacion"
     },
     {
       "UpstreamPathTemplate": "/api/v1/Login/revokeToken",
@@ -39,7 +49,7 @@
           "Port": 7079
         }
       ],
-      "SwaggerKey": "servicios"
+      "SwaggerKey": "autenticacion"
     },
     {
       "UpstreamPathTemplate": "/api/v1/cla/componentes",
@@ -49,7 +59,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7079
+          "Port": 7239
         }
       ],
       "SwaggerKey": "servicios"
@@ -62,7 +72,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7079
+          "Port": 7239
         }
       ],
       "SwaggerKey": "servicios"
@@ -75,7 +85,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7079
+          "Port": 7239
         }
       ],
       "SwaggerKey": "servicios"
@@ -88,7 +98,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7079
+          "Port": 7239
         }
       ],
       "SwaggerKey": "servicios"

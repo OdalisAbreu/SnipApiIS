@@ -1,6 +1,6 @@
-﻿namespace SnipAuthServerV1.Models
+﻿namespace ServiciosSnip.Models
 {
-    public class FuenteGeneralDto
+    public class FuenteExternaDto
     {
         public string cod_grupo { get; set; }
         public string descripcion_grupo { get; set; }
@@ -11,5 +11,10 @@
         public string estado { get; set; }
         public string condicion { get; set; }
 
+    }
+
+    public class FuentesExternasDto
+    {
+        public List<FuenteExternaDto>? datos { get; set; }
     }
 }

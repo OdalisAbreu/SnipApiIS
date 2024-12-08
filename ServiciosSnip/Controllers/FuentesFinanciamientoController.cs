@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
-using SnipAuthServerV1.Models;
-using SnipAuthServerV1.Services;
+using ServiciosSnip.Models;
+using ServiciosSnip.Services;
 using System;
 using System.Data;
 using System.Threading.Tasks;
