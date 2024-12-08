@@ -131,7 +131,7 @@ builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.Authenti
         options.Authority = builder.Configuration["Access:UrlBase"]; // Cambia al URL de tu IdentityServer
         options.ApiName = "api_resource"; // El nombre del recurso API definido en IdentityServer
         options.ApiSecret = builder.Configuration["Access:ApiSecret"]; // El secreto configurado para el API
-        options.RequireHttpsMetadata = false; // Solo usa 'false' para desarrollo
+        options.RequireHttpsMetadata = true; // Solo usa 'false' para desarrollo
     });
 
 // Configurar Sentry usando la configuración de appsettings.json

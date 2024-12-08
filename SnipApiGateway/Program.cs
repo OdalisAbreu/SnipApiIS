@@ -25,8 +25,6 @@ builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange
 // Configura SwaggerForOcelot
 builder.Services.AddSwaggerForOcelot(builder.Configuration);
 
-// Configura Ocelot (llamar solo una vez y después de SwaggerForOcelot)
-builder.Services.AddOcelot(builder.Configuration);
 
 // Configura autenticación y autorización
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -60,6 +58,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+// Configura Ocelot (llamar solo una vez y después de SwaggerForOcelot)
+builder.Services.AddOcelot(builder.Configuration);
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Configura Swagger para el API Gateway
@@ -109,9 +110,6 @@ app.UseSwagger();
 app.UseSwaggerForOcelotUI(opt =>
 {
     opt.PathToSwaggerGenerator = "/swagger/docs";
-    // Si usas OAuth2, puedes descomentar y configurar las siguientes líneas
-    // opt.OAuthClientId("client_id");
-    // opt.OAuthAppName("API Gateway Swagger UI");
 });
 
 // Configura Ocelot
