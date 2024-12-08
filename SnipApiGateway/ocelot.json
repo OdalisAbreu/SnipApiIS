@@ -1,7 +1,19 @@
 {
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:7079" // El puerto de tu ApiGateway
+    "BaseUrl": "https://localhost:7079"
   },
+  "SwaggerEndPoints": [
+    {
+      "Key": "servicios",
+      "Config": [
+        {
+          "Name": "Servicios API",
+          "Version": "v1",
+          "Url": "https://localhost:7079/swagger/v1/swagger.json" 
+        }
+      ]
+    }
+  ],
   "Routes": [
     {
       "UpstreamPathTemplate": "/api/v1/Login",
@@ -13,7 +25,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "servicios"
     },
     {
       "UpstreamPathTemplate": "/api/v1/Login/revokeToken",
@@ -25,7 +38,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "servicios"
     },
     {
       "UpstreamPathTemplate": "/api/v1/cla/componentes",
@@ -37,7 +51,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "servicios"
     },
     {
       "UpstreamPathTemplate": "/api/v1/cla/geograficos",
@@ -49,7 +64,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "servicios"
     },
     {
       "UpstreamPathTemplate": "/api/v1/cla/Instituciones",
@@ -61,7 +77,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "servicios"
     },
     {
       "UpstreamPathTemplate": "/api/v1/cla/tipologias",
@@ -73,7 +90,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "servicios"
     }
   ]
 }
