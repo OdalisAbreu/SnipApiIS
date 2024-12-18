@@ -1,26 +1,33 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
-using ServiciosSnip.Models;
-using ServiciosSnip.Services;
+using CatalogosSnipSigef.Models;
+using CatalogosSnipSigef.Services;
+using System.Data.SqlClient;
 using System;
 using System.Data;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Data.SqlClient;
 
 
-namespace SnipAuthServerV1.Controllers
+namespace CatalogosSnipSigef.Controllers
 {
-        [ApiController]
-        [Route("/servicios/v1/sigef/cla/financiamiento/fgeneral")]
+    [ApiController]
+    [Route("/servicios/v1/sigef/cla/financiamiento/fgeneral")]
+    [Authorize]
     public class FuentesFinanciamientoController : Controller
     {
             private readonly IDbConnection _dbConnection;
             private readonly ExternalApiService _externalApiService;
+            private readonly IConfiguration _configuration;
 
-            public FuentesFinanciamientoController(IDbConnection dbConnection, ExternalApiService externalApiService)
+            public FuentesFinanciamientoController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
             {
                 _dbConnection = dbConnection;
                 _externalApiService = externalApiService;
-            }
+                _configuration = configuration;
+        }
 
             [HttpGet]
             public async Task<IActionResult> GetFuentesDeFinanciamiento([FromQuery] string estado = "vigente")
@@ -41,9 +48,9 @@ namespace SnipAuthServerV1.Controllers
                 string url = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento?estado={estado}";
 
                 // Consumir el servicio externo
-                var fuentesExternas = await _externalApiService.GetFuentesExternasAsync(url, token);
+                var fuentesExternas = await _externalApiService.GetFuentesFinamciamientoAsync(url, token);
 
-                if (fuentesExternas == null || fuentesExternas.datos.Count == 0)
+                if (fuentesExternas == null)
                 {
                     return NotFound(new
                     {
@@ -57,7 +64,7 @@ namespace SnipAuthServerV1.Controllers
                 {
                     estatus_code = "200",
                     estatus_msg = "Registros obtenidos correctamente.",
-                    data = fuentesExternas.datos
+                    data = fuentesExternas
                 });
             }
 
@@ -96,7 +103,7 @@ namespace SnipAuthServerV1.Controllers
                 string url = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
 
                 // Consumir el servicio externo
-                var fuenteExterna = await _externalApiService.GetFuentesFinamciamientoAsync(url, token);
+                var fuenteExterna = await _externalApiService.GetFuenteFinamciamientoAsync(url, token);
                 if (fuenteExterna == null )
                 {
                     return BadRequest(new
@@ -141,8 +148,6 @@ namespace SnipAuthServerV1.Controllers
                     fec_upd = DateTime.Now,
                 }, commandType: CommandType.StoredProcedure);
 
-
-
             return Ok(new
                 {
                     estatus_code = "201",
@@ -150,53 +155,9 @@ namespace SnipAuthServerV1.Controllers
                 });
             }
 
-       /* [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFuente(int id)
-        {
-
-                // Validar si la fuente existe
-                var existe = _dbConnection.ExecuteScalar<int>("dbo.f_cla_fuentes_generales_leer", new
-                {
-                    id_fte_gral = id,
-                    estado = "S",
-                    usu_upd = 1 // Usuario de validación
-                }, commandType: CommandType.StoredProcedure);
-
-                if (existe <= 0)
-                {
-                    return NotFound(new
-                    {
-                        estatus_code = "404",
-                        estatus_msg = "No se encontró la fuente especificada."
-                    });
-                }
-
-                // Ejecutar el procedimiento para eliminar fuente general
-                var result = _dbConnection.Execute("dbo.f_cla_fuentes_generales_del", new
-                {
-                    id_fte_gral = id,
-                    estado = "S",
-                    usu_upd = 1 // Usuario que realiza la acción
-                }, commandType: CommandType.StoredProcedure);
-
-                // Ejecutar el procedimiento para eliminar fuente especifica
-               var resultEsp = _dbConnection.Execute("dbo.f_cla_fuentes_especificas_del", new
-                {
-                    id_fte_gral = id,
-                    estado = "S",
-                    usu_upd = 1 // Usuario que realiza la acción
-                }, commandType: CommandType.StoredProcedure);
-
-                return Ok(new
-                {
-                    estatus_code = "200",
-                    estatus_msg = "Fuente eliminada correctamente."
-                });
-
-        }*/
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateFuente(int id, [FromBody] UpdateFuenteRequest request)
+        public async Task<IActionResult> UpdateFuenteGeneral(int id, [FromBody] UpdateFuenteRequest request)
         {
             if (id <= 0)
             {
@@ -281,21 +242,74 @@ namespace SnipAuthServerV1.Controllers
             }
         }
 
-        // Clase para recibir los datos de actualización
-        public class UpdateFuenteRequest
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteFuente(int id)
         {
-            public int? id_version { get; set; }
-            public string? cod_fte_gral { get; set; }
-            public string? descripcion { get; set; }
-            public string? tipo_fuente { get; set; } // "I" o "E"
-            public string? activo { get; set; } // "S" o "N"
-            public string? estado { get; set; } // "actualizar", "registrado", etc.
-            public int? bandeja { get; set; }
-            public int? usu_ins { get; set; }
-            public DateTime? fec_ins { get; set; }
+
+            // Validar si la fuente existe
+            var result = await _dbConnection.QueryFirstOrDefaultAsync<dynamic>("dbo.[f_cla_fuentes_generales_leer]", new
+            {
+                id_fte_gral = id,
+                estado = "S",
+                usu_upd = 1
+            }, commandType: CommandType.StoredProcedure);
+
+            if (result == null)
+            {
+                return NotFound(new
+                {
+                    estatus_code = "404",
+                    estatus_msg = "No se encontró la fuente especificada."
+                });
+            }
+            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            var query = "SELECT * FROM cla_fuentes_especificas WHERE 1=1";
+            var parameters = new DynamicParameters();
+
+            query += "AND id_fte_gral = @id_fte_gral";
+            parameters.Add("id_fte_gral", id);
+
+            var fEspecifica = await connection.QueryAsync(query, parameters);
+
+            //return fEspecifica;
+            try
+            {
+            foreach(var especifica in fEspecifica)
+            {
+                // Ejecutar el procedimiento para eliminar fuente especifica
+                var Especifica = _dbConnection.Execute("dbo.[f_cla_fuentes_especificas_del]", new
+                {
+                    id_fte_esp = especifica.id_fte_esp,
+                    estado = "S",
+                    usu_upd = 1 // Usuario que realiza la acción
+                }, commandType: CommandType.StoredProcedure);
+            }
+                // Ejecutar el procedimiento para eliminar fuente general
+                var procedure = _dbConnection.Execute("dbo.[f_cla_fuentes_generales_del]", new
+                {
+                    id_fte_gral = id,
+                    estado = "S",
+                    usu_upd = 1 // Usuario que realiza la acción
+                }, commandType: CommandType.StoredProcedure);
+
+                return Ok(new
+                {
+                    estatus_code = "200",
+                    estatus_msg = "Fuente eliminada correctamente."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    estatus_code = "500",
+                    estatus_msg = "Ocurrió un error al intentar actualizar la fuente.",
+                    detalle_error = ex.Message
+                });
+            }
+
+
         }
-
-
         // Clase para recibir el JSON del cliente
         public class CodFteGralRequest
             {

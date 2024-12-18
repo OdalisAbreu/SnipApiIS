@@ -7,7 +7,7 @@
       "Key": "autenticacion",
       "Config": [
         {
-          "Name": "Autenticación API",
+          "Name": "IDP API",
           "Version": "v1",
           "Url": "https://localhost:7079/swagger/v1/swagger.json"
         }
@@ -17,18 +17,28 @@
       "Key": "servicios",
       "Config": [
         {
-          "Name": "Servicios API",
+          "Name": "Servicios SNIP",
           "Version": "v1",
           "Url": "https://localhost:7239/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "catalogos",
+      "Config": [
+        {
+          "Name": "Catalogo SNIP - SIGEF",
+          "Version": "v1",
+          "Url": "https://localhost:7142/swagger/v1/swagger.json"
         }
       ]
     }
   ],
   "Routes": [
     {
-      "UpstreamPathTemplate": "/api/v1/Login",
+      "UpstreamPathTemplate": "/api/v1/auth/Login",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/servicios/v1/Login",
+      "DownstreamPathTemplate": "/servicios/v1/auth/Login",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
@@ -39,9 +49,9 @@
       "SwaggerKey": "autenticacion"
     },
     {
-      "UpstreamPathTemplate": "/api/v1/Login/revokeToken",
+      "UpstreamPathTemplate": "/api/v1/auth/revokeToken",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/servicios/v1/Login/revoke",
+      "DownstreamPathTemplate": "/servicios/v1/auth/Login/revoke",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
@@ -102,6 +112,214 @@
         }
       ],
       "SwaggerKey": "servicios"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/financiamiento/fgeneral",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/financiamiento/fgeneral",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/financiamiento/fgeneral",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/financiamiento/fgeneral",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/financiamiento/fgeneral/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/financiamiento/fgeneral/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/fgeneral/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/financiamiento/fgeneral/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/funcional",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/funcional",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/funcional",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/funcional",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/funcional/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/funcional/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/funcional/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/funcional/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/cta-presupuestaria",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/cta-presupuestaria",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/cta-presupuestaria",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/cta-presupuestaria",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/cta-presupuestaria/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/cta-presupuestaria/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/cta-presupuestaria/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/cta-presupuestaria/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/org-financiador",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/org-financiador",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/org-financiador",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/org-financiador",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/org-financiador/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/org-financiador/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/org-financiador/{id}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/org-financiador/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
     }
   ]
 }

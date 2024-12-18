@@ -1,7 +1,7 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.OpenApi.Models;
-using ServiciosSnip.Services;
+using CatalogosSnipSigef.Services;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +50,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+
 
 // Agregar autorización
 builder.Services.AddAuthorization();

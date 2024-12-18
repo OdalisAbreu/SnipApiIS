@@ -6,8 +6,8 @@ using System.Data.SqlClient;
 
 namespace SnipAuthServerV1.Controllers
 {
-        [ApiController]
-        [Route("servicios/v1/snip/cla/[controller]")]
+     [ApiController]
+     [Route("servicios/v1/snip/cla/[controller]")]
     public class GeograficosController : Controller
     {
 

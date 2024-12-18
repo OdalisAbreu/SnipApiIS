@@ -1,13 +1,11 @@
 using IdentityServer4.AccessTokenValidation;
 using IdentityServer4.Models;
 using IdentityServer4.Validation;
-using IdentityServer4.Stores;
 using Microsoft.OpenApi.Models;
 using SnipAuthServerV1.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Security.Cryptography.X509Certificates;
 using SnipAuthServerV1.Jobs;
-using SnipAuthServerV1.Services;
 using System.Data;
 using Microsoft.Data.SqlClient;
 
@@ -72,7 +70,7 @@ builder.Services.AddIdentityServer()
             ClientId = builder.Configuration["Access:ClientId"],
             AllowedGrantTypes = GrantTypes.ResourceOwnerPasswordAndClientCredentials,
             ClientSecrets = { new Secret(builder.Configuration["Access:ClientSecrets"].Sha256()) },
-            AllowedScopes = { "api_resource", "api_scope" },
+            AllowedScopes = { "api_resource", "api_scope", "offline_access" },
             AllowOfflineAccess = true,
             AccessTokenType = AccessTokenType.Reference,
             AccessTokenLifetime = 60 * 30,
@@ -83,7 +81,14 @@ builder.Services.AddIdentityServer()
     .AddInMemoryIdentityResources(new List<IdentityResource>
     {
         new IdentityResources.OpenId(),
-        new IdentityResources.Profile()
+        new IdentityResources.Profile(),
+        new IdentityResource
+        {
+            Name = "offline_access",
+            DisplayName = "Offline Access",
+            Description = "Access to use refresh tokens",
+            UserClaims = new List<string>() // No necesita claims
+        }
     })
     .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
     .AddInMemoryPersistedGrants()
