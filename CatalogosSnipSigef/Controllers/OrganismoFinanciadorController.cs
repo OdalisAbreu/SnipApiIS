@@ -9,7 +9,7 @@ namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/org-financiador")]
-    [Authorize]
+  //  [Authorize]
     public class OrganismoFinanciador : Controller
     {
         private readonly IDbConnection _dbConnection;
@@ -22,41 +22,35 @@ namespace CatalogosSnipSigef.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetOrganismoFinanciador([FromQuery] string estado = "vigente")
+        public async Task<IActionResult> GetOrganismoFinanciadores([FromQuery] int? id_org_fin = null)
         {
-            // Autenticación: Obtener el token de acceso
-            var token = await _externalApiService.GetAuthTokenAsync();
+            var query = "SELECT * FROM cla_organismos_financiadores WHERE activo = 'S' AND 1=1";
+            var parameters = new DynamicParameters();
 
-            if (string.IsNullOrEmpty(token))
+            if (id_org_fin.HasValue)
             {
-                return StatusCode(401, new
-                {
-                    estatus_code = "401",
-                    estatus_msg = "No se pudo autenticar con el servicio externo."
-                });
+                query += "AND id_org_fin = @id_org_fin";
+                parameters.Add("id_org_fin", id_org_fin.Value);
             }
 
-            // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/OrganismoFinanciador?estado={estado}";
+            var organismosFinanciadores = await _dbConnection.QueryAsync(query, parameters);
+            var totalRegistros = organismosFinanciadores.Count();
 
-            // Consumir el servicio externo
-            var organismoFinanciador = await _externalApiService.GetOrganismosFinanciadoresAsync(url, token);
-            if (organismoFinanciador == null )
+            if (totalRegistros < 1)
             {
-                return NotFound(new
+                return BadRequest(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontraron registros en el servicio externo."
+                    estatus_msg = "No se encontraron organismos financiadores."
                 });
             }
-
-            // Retornar los datos obtenidos
-            return Ok(new
+            var objet = new List<object>();
+            objet.Add(new
             {
-                estatus_code = "200",
-                estatus_msg = "Registros obtenidos correctamente.",
-                data = organismoFinanciador.datos
+                total_registros = totalRegistros,
+                cla_organismos_financiadores = organismosFinanciadores
             });
+            return Ok(objet[0]);
         }
 
         [HttpPost]
