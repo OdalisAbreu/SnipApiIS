@@ -1,13 +1,16 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
-using ServiciosSnip.Models;
-using ServiciosSnip.Services;
+using CatalogosSnipSigef.Models;
+using CatalogosSnipSigef.Services;
 using System.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.SqlClient;
 
-namespace SnipAuthServerV1.Controllers
+namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/cta-presupuestaria")]
+    [Authorize]
     public class CuentaPresupuestaria : Controller
     {
         private readonly IDbConnection _dbConnection;
@@ -20,46 +23,39 @@ namespace SnipAuthServerV1.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetFuentesDeFinanciamiento([FromQuery] string estado = "vigente")
+        public async Task<IActionResult> getObjetales([FromQuery] int? id_objetal = null)
         {
-            // Autenticación: Obtener el token de acceso
-            var token = await _externalApiService.GetAuthTokenAsync();
+            var query = "SELECT * FROM cla_objetales WHERE activo = 'S' AND 1=1";
+            var parameters = new DynamicParameters();
 
-            if (string.IsNullOrEmpty(token))
+            if (id_objetal.HasValue)
             {
-                return StatusCode(401, new
-                {
-                    estatus_code = "401",
-                    estatus_msg = "No se pudo autenticar con el servicio externo."
-                });
+                query += "AND id_objetal = @id_objetal";
+                parameters.Add("id_objetal", id_objetal.Value);
             }
 
-            // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto?estado={estado}";
+            var objetales = await _dbConnection.QueryAsync(query, parameters);
+            var totalRegistros = objetales.Count();
 
-            // Consumir el servicio externo
-            var CuentaPresupuestaria = await _externalApiService.GetCuentasPresupuestariasAsync(url, token);
-
-            if (CuentaPresupuestaria == null)
+            if (totalRegistros < 1) 
             {
-                return NotFound(new
+                return BadRequest(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontraron registros en el servicio externo."
+                    estatus_msg = "No se encontraron objetales."
                 });
             }
-
-            // Retornar los datos obtenidos
-            return Ok(new
+            var objet = new List<object>();
+            objet.Add(new
             {
-                estatus_code = "200",
-                estatus_msg = "Registros obtenidos correctamente.",
-                data = CuentaPresupuestaria
+                total_registros = totalRegistros,
+                cla_objetales = objetales
             });
+            return Ok(objet[0]);
         }
 
         [HttpPost]
-        public async Task<IActionResult> InsertFuenteFromExternalService([FromBody] CodObjetalRequest request)
+        public async Task<IActionResult> InsertObjetalesFromExternalService([FromBody] CodObjetalRequest request)
         {
             if (string.IsNullOrEmpty(request.cod_objetal))
             {
@@ -125,46 +121,9 @@ namespace SnipAuthServerV1.Controllers
                 estatus_msg = "Fuente registrada correctamente a partir del servicio externo."
             });
         }
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFuente(int id)
-        {
-
-            // Validar si la fuente existe
-            var existe = _dbConnection.ExecuteScalar<int>("dbo.[f_cla_objetales_leer]", new
-            {
-                id_objetal = id,
-                estado = "S",
-                usu_upd = 1 // Usuario de validación
-            }, commandType: CommandType.StoredProcedure);
-
-            if (existe <= 0)
-            {
-                return NotFound(new
-                {
-                    estatus_code = "404",
-                    estatus_msg = "No se encontró la fuente especificada."
-                });
-            }
-
-            // Ejecutar el procedimiento para eliminar fuente general
-            var result = _dbConnection.Execute("dbo.f_cla_objetales_del", new
-            {
-                id_objetal = id,
-                estado = "S",
-                usu_upd = 1 // Usuario que realiza la acción
-            }, commandType: CommandType.StoredProcedure);
-
-            return Ok(new
-            {
-                estatus_code = "200",
-                estatus_msg = "Fuente eliminada correctamente."
-            });
-
-        }
-
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateFuente(int id, [FromBody] UpdateobjetalesRequest request)
+        public async Task<IActionResult> UpdateObjetales(int id, [FromBody] UpdateobjetalesRequest request)
         {
             if (id <= 0)
             {
@@ -255,27 +214,43 @@ namespace SnipAuthServerV1.Controllers
                 });
             }
         }
-
-        // Clase para recibir los datos de actualización
-        public class UpdateobjetalesRequest
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteObjetales(int id)
         {
-            public string? id_version { get; set; }
-            public string? cod_objetal { get; set; }
-            public string? descripcion { get; set; } 
-            public string? cod_objetal_superior { get; set; } 
-            public string? cod_despliegue { get; set; }
-            public string? terminal { get; set; }
-            public string? inversion { get; set; }
-            public string? activo { get; set; }
-            public int? bandeja { get; set; }
-            public int? usu_ins { get; set; }
-            public DateTime? fec_ins { get; set; }
-            public string? usu_upd { get; set; }
-            public string?  fec_upd { get; set; }
+
+            // Validar si la fuente existe
+            var existe = _dbConnection.ExecuteScalar<int>("dbo.[f_cla_objetales_leer]", new
+            {
+                id_objetal = id,
+                estado = "S",
+                usu_upd = 1 // Usuario de validación
+            }, commandType: CommandType.StoredProcedure);
+
+            if (existe <= 0)
+            {
+                return NotFound(new
+                {
+                    estatus_code = "404",
+                    estatus_msg = "No se encontró la fuente especificada."
+                });
+            }
+
+            // Ejecutar el procedimiento para eliminar fuente general
+            var result = _dbConnection.Execute("dbo.f_cla_objetales_del", new
+            {
+                id_objetal = id,
+                estado = "S",
+                usu_upd = 1 // Usuario que realiza la acción
+            }, commandType: CommandType.StoredProcedure);
+
+            return Ok(new
+            {
+                estatus_code = "200",
+                estatus_msg = "Fuente eliminada correctamente."
+            });
+
         }
 
-
-        
         // Clase para recibir el JSON del cliente
         public class CodObjetalRequest
         {

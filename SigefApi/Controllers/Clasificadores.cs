@@ -17,7 +17,7 @@ namespace SigefApi.Controllers
             {
                 cod_grupo = "1",
                 descripcion_grupo = "Fuente Internas",
-                cod_fuente = "10",
+                cod_fuente = "11",
                 descripcion_fuente = "Fuente General",
                 cod_fuente_especifica = "0100",
                 descripcion_fuente_especifica = "Fuente Especifica",
@@ -28,7 +28,7 @@ namespace SigefApi.Controllers
             {
                 cod_grupo = "2",
                 descripcion_grupo = "Fuente Externas",
-                cod_fuente = "20",
+                cod_fuente = "12",
                 descripcion_fuente = "Fuente de Donaciones",
                 cod_fuente_especifica = "0200",
                 descripcion_fuente_especifica = "Donaciones Especificas",
@@ -39,7 +39,7 @@ namespace SigefApi.Controllers
             {
                 cod_grupo = "3",
                 descripcion_grupo = "Fuente Externas",
-                cod_fuente = "30",
+                cod_fuente = "14",
                 descripcion_fuente = "Préstamos Externos",
                 cod_fuente_especifica = "0300",
                 descripcion_fuente_especifica = "Préstamos Multilaterales",
