@@ -10,7 +10,7 @@ namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/cta-presupuestaria")]
-   // [Authorize]
+    [Authorize]
     public class CuentaPresupuestaria : Controller
     {
         private readonly IDbConnection _dbConnection;
@@ -51,7 +51,7 @@ namespace CatalogosSnipSigef.Controllers
                 total_registros = totalRegistros,
                 cla_objetales = objetales
             });
-            return Ok(objet);
+            return Ok(objet[0]);
         }
 
         [HttpPost]
