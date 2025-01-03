@@ -10,7 +10,7 @@ namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/funcional")]
-    //[Authorize]
+    [Authorize]
     public class FuncionalController : Controller
     {
         private readonly IDbConnection _dbConnection;
