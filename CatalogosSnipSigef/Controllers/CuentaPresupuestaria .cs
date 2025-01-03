@@ -4,12 +4,13 @@ using CatalogosSnipSigef.Models;
 using CatalogosSnipSigef.Services;
 using System.Data;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.SqlClient;
 
 namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/cta-presupuestaria")]
-    [Authorize]
+   // [Authorize]
     public class CuentaPresupuestaria : Controller
     {
         private readonly IDbConnection _dbConnection;
@@ -22,42 +23,35 @@ namespace CatalogosSnipSigef.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetObjetosGasto([FromQuery] string estado = "vigente")
+        public async Task<IActionResult> getObjetales([FromQuery] int? id_objetal = null)
         {
-            // Autenticación: Obtener el token de acceso
-            var token = await _externalApiService.GetAuthTokenAsync();
+            var query = "SELECT * FROM cla_objetales WHERE activo = 'S' AND 1=1";
+            var parameters = new DynamicParameters();
 
-            if (string.IsNullOrEmpty(token))
+            if (id_objetal.HasValue)
             {
-                return StatusCode(401, new
-                {
-                    estatus_code = "401",
-                    estatus_msg = "No se pudo autenticar con el servicio externo."
-                });
+                query += "AND id_objetal = @id_objetal";
+                parameters.Add("id_objetal", id_objetal.Value);
             }
 
-            // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto?estado={estado}";
+            var objetales = await _dbConnection.QueryAsync(query, parameters);
+            var totalRegistros = objetales.Count();
 
-            // Consumir el servicio externo
-            var CuentaPresupuestaria = await _externalApiService.GetCuentasPresupuestariasAsync(url, token);
-
-            if (CuentaPresupuestaria == null)
+            if (totalRegistros < 1) 
             {
-                return NotFound(new
+                return BadRequest(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontraron registros en el servicio externo."
+                    estatus_msg = "No se encontraron objetales."
                 });
             }
-
-            // Retornar los datos obtenidos
-            return Ok(new
+            var objet = new List<object>();
+            objet.Add(new
             {
-                estatus_code = "200",
-                estatus_msg = "Registros obtenidos correctamente.",
-                data = CuentaPresupuestaria
+                total_registros = totalRegistros,
+                cla_objetales = objetales
             });
+            return Ok(objet);
         }
 
         [HttpPost]
