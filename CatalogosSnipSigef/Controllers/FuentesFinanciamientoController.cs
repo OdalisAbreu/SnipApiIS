@@ -15,7 +15,7 @@ namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/financiamiento/fgeneral")]
-  //  [Authorize]
+    [Authorize]
     public class FuentesFinanciamientoController : Controller
     {
             private readonly IDbConnection _dbConnection;

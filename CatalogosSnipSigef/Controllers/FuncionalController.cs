@@ -10,7 +10,7 @@ namespace CatalogosSnipSigef.Controllers
 {
     [ApiController]
     [Route("/servicios/v1/sigef/cla/funcional")]
-    [Authorize]
+    //[Authorize]
     public class FuncionalController : Controller
     {
         private readonly IDbConnection _dbConnection;
@@ -23,42 +23,35 @@ namespace CatalogosSnipSigef.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetFuentesFuncional([FromQuery] string estado = "vigente")
+        public async Task<IActionResult> GetFuncional([FromQuery] int? id_funcional = null)
         {
-            // Autenticación: Obtener el token de acceso
-            var token = await _externalApiService.GetAuthTokenAsync();
+            var query = "SELECT * FROM cla_funcional WHERE activo = 'S' AND 1=1";
+            var parameters = new DynamicParameters();
 
-            if (string.IsNullOrEmpty(token))
+            if (id_funcional.HasValue) 
             {
-                return StatusCode(401, new
-                {
-                    estatus_code = "401",
-                    estatus_msg = "No se pudo autenticar con el servicio externo."
-                });
+                query += "AND id_funcional = @id_funcional";
+                parameters.Add("id_funcional", id_funcional.Value);
             }
+            var funcionales = await _dbConnection.QueryAsync(query, parameters);
+            var totalRegistros = funcionales.Count();
 
-            // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/fuente?estado={estado}";
-
-            // Consumir el servicio externo
-            var fuentesExternas = await _externalApiService.GetFuentesExternasAsync(url, token);
-
-            if (fuentesExternas.datos == null)
+            if (totalRegistros < 1)
             {
-                return NotFound(new
+                return BadRequest(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontraron registros en el servicio externo."
+                    estatus_msg = "No se encontraron funcionales."
                 });
             }
-
-            // Retornar los datos obtenidos
-            return Ok(new
+            var objet = new List<object>();
+            objet.Add(new
             {
-                estatus_code = "200",
-                estatus_msg = "Registros obtenidos correctamente.",
-                data = fuentesExternas.datos
+                total_registros = totalRegistros,
+                cla_funcionales = funcionales
             });
+
+            return Ok(objet[0]);
         }
 
         [HttpPost]
