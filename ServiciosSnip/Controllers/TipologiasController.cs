@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
+using System.Security.Claims;
 
 namespace SnipAuthServerV1.Controllers
 {
@@ -24,7 +25,8 @@ namespace SnipAuthServerV1.Controllers
         {
             // Obtener la hora actual y el nombre del usuario autenticado
             var fechaHora = DateTime.UtcNow; // Hora en UTC
-            var usuario = User.Identity?.Name ?? "Usuario anónimo";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
             using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
 
@@ -52,7 +54,7 @@ namespace SnipAuthServerV1.Controllers
             var totalRegistros = result.Count;
             // Obtener la dirección IP del usuario
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            SentrySdk.CaptureMessage($"Consulta el endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}");
+            SentrySdk.CaptureMessage($"Consulta Usuario: {userName} al endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}");
 
             var objet = new List<object>();
             objet.Add(new
@@ -61,8 +63,6 @@ namespace SnipAuthServerV1.Controllers
                 cla_tipologias = new List<object>(result),
             });
             return Ok(objet[0]);
-
-            //return Ok(result);
         }
 
     }

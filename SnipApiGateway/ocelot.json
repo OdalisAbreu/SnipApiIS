@@ -127,6 +127,19 @@
       "SwaggerKey": "catalogos"
     },
     {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/financiamiento/fespecifica",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/financiamiento/fespecifica",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7142
+        }
+      ],
+      "SwaggerKey": "catalogos"
+    },
+    {
       "UpstreamPathTemplate": "/api/v1/sigef/cla/financiamiento/fgeneral",
       "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/servicios/v1/sigef/cla/financiamiento/fgeneral",

@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using SnipAuthServerV1.Jobs;
 using System.Data;
 using Microsoft.Data.SqlClient;
+using IDP.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,11 +71,11 @@ builder.Services.AddIdentityServer()
             ClientId = builder.Configuration["Access:ClientId"],
             AllowedGrantTypes = GrantTypes.ResourceOwnerPasswordAndClientCredentials,
             ClientSecrets = { new Secret(builder.Configuration["Access:ClientSecrets"].Sha256()) },
-            AllowedScopes = { "api_resource", "api_scope", "offline_access" },
+            AllowedScopes = { "api_resource", "api_scope", "offline_access", "openid", "profile" },
             AllowOfflineAccess = true,
             AccessTokenType = AccessTokenType.Reference,
             AccessTokenLifetime = 60 * 30,
-            IdentityTokenLifetime = 60 * 30 
+            IdentityTokenLifetime = 60 * 30
         }
     })
     .AddDeveloperSigningCredential()
@@ -92,7 +93,8 @@ builder.Services.AddIdentityServer()
     })
     .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
     .AddInMemoryPersistedGrants()
-    .AddSigningCredential(signingCert);
+    .AddSigningCredential(signingCert)
+    .AddProfileService<CustomProfileService>();
 
 // Configuración de Swagger
 builder.Services.AddSwaggerGen(c =>

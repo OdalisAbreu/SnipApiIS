@@ -4,6 +4,7 @@ using CatalogosSnipSigef.Services;
 using System.Data;
 using CatalogosSnipSigef.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 
 namespace CatalogosSnipSigef.Controllers
@@ -15,16 +16,20 @@ namespace CatalogosSnipSigef.Controllers
     {
         private readonly IDbConnection _dbConnection;
         private readonly ExternalApiService _externalApiService;
-
-        public FuncionalController(IDbConnection dbConnection, ExternalApiService externalApiService)
+        private readonly string _urlApiBase;
+        public FuncionalController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
         {
             _dbConnection = dbConnection;
             _externalApiService = externalApiService;
+            _urlApiBase = configuration["SigefApi:Url"];
         }
 
         [HttpGet]
         public async Task<IActionResult> GetFuncional([FromQuery] int? id_funcional = null)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             var query = "SELECT * FROM cla_funcional WHERE activo = 'S' AND 1=1";
             var parameters = new DynamicParameters();
 
@@ -57,6 +62,9 @@ namespace CatalogosSnipSigef.Controllers
         [HttpPost]
         public async Task<IActionResult> InsertFuncionalFromExternalService([FromBody] CodFuncionRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             // Validar que el campo codFteGral sea obligatorio
             if (string.IsNullOrEmpty(request.cod_su_funcion))
             {
@@ -80,7 +88,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+            string url = $"{_urlApiBase}/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
 
             // Consumir el servicio externo
             var fuenteExterna = await _externalApiService.GetFuenteExternaAsync(url, token);
@@ -105,9 +113,9 @@ namespace CatalogosSnipSigef.Controllers
                 activo = fuenteExterna.estado == "habilitado" ? "S" : "N",
                 estado = "registrar",
                 bandeja = 0,
-                usu_ins = 1,
+                usu_ins = userId,
                 fec_ins = DateTime.Now,
-                usu_upd = 1,
+                usu_upd = userId,
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
 
@@ -120,6 +128,9 @@ namespace CatalogosSnipSigef.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFuncional(int id, [FromBody] UpdateCodFuncionRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             if (id <= 0)
             {
                 return BadRequest(new
@@ -135,7 +146,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_funcional = id,
                     estado = "S",
-                    usu_upd = 1
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 if (datosExistentes == null)
@@ -172,7 +183,7 @@ namespace CatalogosSnipSigef.Controllers
                 parametros.Add("bandeja", bandeja);
                 parametros.Add("usu_ins", usuIns);
                 parametros.Add("fec_ins", fecIns);
-                parametros.Add("usu_upd", 1);
+                parametros.Add("usu_upd", userId);
                 parametros.Add("fec_upd", DateTime.Now);
 
                 // Ejecutar el procedimiento de actualización
@@ -207,13 +218,15 @@ namespace CatalogosSnipSigef.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFuncional(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
             // Validar si la fuente existe
             var existe = _dbConnection.ExecuteScalar<int>("dbo.[f_cla_funcional_leer]", new
             {
                 id_funcional = id,
                 estado = "S",
-                usu_upd = 1 // Usuario de validación
+                usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
             if (existe <= 0)
@@ -230,7 +243,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_funcional = id,
                     estado = "S",
-                    usu_upd = 1 // Usuario que realiza la acción
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 return Ok(new

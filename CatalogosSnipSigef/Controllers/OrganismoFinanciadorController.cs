@@ -4,6 +4,7 @@ using CatalogosSnipSigef.Services;
 using System.Data;
 using CatalogosSnipSigef.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace CatalogosSnipSigef.Controllers
 {
@@ -14,16 +15,21 @@ namespace CatalogosSnipSigef.Controllers
     {
         private readonly IDbConnection _dbConnection;
         private readonly ExternalApiService _externalApiService;
+        private readonly string _urlApiBase;
 
-        public OrganismoFinanciador(IDbConnection dbConnection, ExternalApiService externalApiService)
+        public OrganismoFinanciador(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
         {
             _dbConnection = dbConnection;
             _externalApiService = externalApiService;
+            _urlApiBase = configuration["SigefApi:Url"];
         }
 
         [HttpGet]
         public async Task<IActionResult> GetOrganismoFinanciadores([FromQuery] int? id_org_fin = null)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             var query = "SELECT * FROM cla_organismos_financiadores WHERE activo = 'S' AND 1=1";
             var parameters = new DynamicParameters();
 
@@ -56,6 +62,9 @@ namespace CatalogosSnipSigef.Controllers
         [HttpPost]
         public async Task<IActionResult> InsertOrganismoFinanciadorFromExternalService([FromBody] IdcodOrgfinRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             // Validar que el campo codFteGral sea obligatorio
             if (string.IsNullOrEmpty(request.Idcod_orgfin))
             {
@@ -79,7 +88,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/OrganismoFinanciador/{request.Idcod_orgfin}";
+            string url = $"{_urlApiBase}/api/clasificadores/sigeft/OrganismoFinanciador/{request.Idcod_orgfin}";
 
             // Consumir el servicio externo
             var organismoFinanciador = await _externalApiService.GetOrganismoFinanciadorAsync(url, token);
@@ -97,7 +106,7 @@ namespace CatalogosSnipSigef.Controllers
             var result = _dbConnection.Execute("dbo.f_cla_organismos_financiadores_ins", new
             {
                 id_org_fin = 0, //Indica que deseas asignar el ID automáticamente
-                id_version = 1,
+                id_version = 1, //validar este campo 
                 cod_grupo = organismoFinanciador.cod_grupo,
                 cod_subgrp = organismoFinanciador.cod_sub_grupo,
                 cod_org_fin = organismoFinanciador.cod_org_fin,
@@ -106,9 +115,9 @@ namespace CatalogosSnipSigef.Controllers
                 activo = organismoFinanciador.estado == "habilitado" ? "S" : "N",
                 estado = "registrar",
                 bandeja = 0,
-                usu_ins = 1,
+                usu_ins = userId,
                 fec_ins = DateTime.Now,
-                usu_upd = 1,
+                usu_upd = userId,
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
 
@@ -121,6 +130,9 @@ namespace CatalogosSnipSigef.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatOrganismoFinanciador(int id, [FromBody] UpdateOrganismoFinanciadorResponse request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             if (id <= 0)
             {
                 return BadRequest(new
@@ -136,7 +148,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_org_fin = id,
                     estado = "S",
-                    usu_upd = 1
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 if (datosExistentes == null)
@@ -175,7 +187,7 @@ namespace CatalogosSnipSigef.Controllers
                 parametros.Add("bandeja", bandeja);
                 parametros.Add("usu_ins", usuIns);
                 parametros.Add("fec_ins", fecIns);
-                parametros.Add("usu_upd", 1);
+                parametros.Add("usu_upd", userId);
                 parametros.Add("fec_upd", DateTime.Now);
 
                 // Ejecutar el procedimiento de actualización
@@ -210,13 +222,15 @@ namespace CatalogosSnipSigef.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrganismoFinanciador(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
             // Validar si la OrganismoFinanciador existe
             var existe = _dbConnection.ExecuteScalar<int>("dbo.[f_cla_organismos_financiadores_leer]", new
             {
                 id_org_fin = id,
                 estado = "S",
-                usu_upd = 1 // Usuario de validación
+                usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
             if (existe <= 0)
@@ -234,7 +248,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_org_fin = id,
                     estado = "S",
-                    usu_upd = 1 // Usuario que realiza la acción
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 return Ok(new

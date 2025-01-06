@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
+using System.Security.Claims;
 
 
 namespace CatalogosSnipSigef.Controllers
@@ -21,17 +22,22 @@ namespace CatalogosSnipSigef.Controllers
             private readonly IDbConnection _dbConnection;
             private readonly ExternalApiService _externalApiService;
             private readonly IConfiguration _configuration;
+            private readonly string _urlApiBase;
 
-            public FuentesFinanciamientoController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
+        public FuentesFinanciamientoController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
             {
                 _dbConnection = dbConnection;
                 _externalApiService = externalApiService;
                 _configuration = configuration;
+                _urlApiBase = configuration["SigefApi:Url"];
         }
 
         [HttpGet]
         public async Task<IActionResult> getFuentesGenerales([FromQuery] int? id_fte_gral)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             var query = "SELECT * FROM cla_fuentes_generales WHERE activo = 'S' AND 1=1 ";
             var parameters = new DynamicParameters();
 
@@ -64,6 +70,9 @@ namespace CatalogosSnipSigef.Controllers
         [Route("/servicios/v1/sigef/cla/financiamiento/fespecifica")]
         public async Task<IActionResult> getFuentesEspecifica([FromQuery] int? id_fte_esp)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             var query = "SELECT * FROM cla_fuentes_especificas WHERE activo = 'S' AND 1=1 ";
             var parameters = new DynamicParameters();
 
@@ -95,8 +104,10 @@ namespace CatalogosSnipSigef.Controllers
         [HttpPost]
             public async Task<IActionResult> InsertFuenteFromExternalService([FromBody] CodFteGralRequest request)
             {
-                // Validar que el campo codFteGral sea obligatorio
-                if (string.IsNullOrEmpty(request.cod_fte_gral))
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+            // Validar que el campo codFteGral sea obligatorio
+            if (string.IsNullOrEmpty(request.cod_fte_gral))
                 {
                     return BadRequest(new
                     {
@@ -124,7 +135,7 @@ namespace CatalogosSnipSigef.Controllers
                 }
 
                 // Construir la URL con los parámetros requeridos
-                string url = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
+                string url = $"{_urlApiBase}/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
 
                 // Consumir el servicio externo
                 var fuenteExterna = await _externalApiService.GetFuenteFinamciamientoAsync(url, token);
@@ -149,9 +160,9 @@ namespace CatalogosSnipSigef.Controllers
                     activo = fuenteExterna.estado == "habilitado" ? "S" : "N",
                     estado = "registrar",
                     bandeja = 0,
-                    usu_ins = 1,
+                    usu_ins = userId,
                     fec_ins = DateTime.Now,
-                    usu_upd = 1,
+                    usu_upd = userId,
                     fec_upd = DateTime.Now,
                 }, commandType: CommandType.StoredProcedure);
 
@@ -166,9 +177,9 @@ namespace CatalogosSnipSigef.Controllers
                     activo = fuenteExterna.estado == "habilitado" ? "S" : "N",
                     estado = "registrar",
                     bandeja = 0,
-                    usu_ins = 1,
+                    usu_ins = userId,
                     fec_ins = DateTime.Now,
-                    usu_upd = 1,
+                    usu_upd = userId,
                     fec_upd = DateTime.Now,
                 }, commandType: CommandType.StoredProcedure);
 
@@ -183,6 +194,8 @@ namespace CatalogosSnipSigef.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFuenteGeneral(int id, [FromBody] UpdateFuenteRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
             if (id <= 0)
             {
                 return BadRequest(new
@@ -199,7 +212,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_fte_gral = id,
                     estado = "S",
-                    usu_upd = 1
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 if (datosExistentes == null)
@@ -234,7 +247,7 @@ namespace CatalogosSnipSigef.Controllers
                 parametros.Add("bandeja", bandeja);
                 parametros.Add("usu_ins", usuIns);
                 parametros.Add("fec_ins", fecIns);
-                parametros.Add("usu_upd", 1);
+                parametros.Add("usu_upd", userId);
                 parametros.Add("fec_upd", DateTime.Now);
 
                 // Ejecutar el procedimiento de actualización
@@ -269,13 +282,15 @@ namespace CatalogosSnipSigef.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFuente(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
             // Validar si la fuente existe
             var result = await _dbConnection.QueryFirstOrDefaultAsync<dynamic>("dbo.[f_cla_fuentes_generales_leer]", new
             {
                 id_fte_gral = id,
                 estado = "S",
-                usu_upd = 1
+                usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
             if (result == null)
@@ -305,7 +320,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_fte_esp = especifica.id_fte_esp,
                     estado = "S",
-                    usu_upd = 1 // Usuario que realiza la acción
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
             }
                 // Ejecutar el procedimiento para eliminar fuente general
@@ -313,7 +328,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_fte_gral = id,
                     estado = "S",
-                    usu_upd = 1 // Usuario que realiza la acción
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 return Ok(new

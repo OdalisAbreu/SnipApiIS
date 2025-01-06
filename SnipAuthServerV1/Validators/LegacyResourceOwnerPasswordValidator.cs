@@ -12,7 +12,6 @@ namespace SnipAuthServerV1.Validators
 
         public LegacyResourceOwnerPasswordValidator(IConfiguration configuration)
         {
-            // Obtén la cadena de conexión desde la configuración
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
@@ -47,7 +46,8 @@ namespace SnipAuthServerV1.Validators
                         {
                             if (await reader.ReadAsync())
                             {
-                                userInfo = reader.GetString(0); // Captura el resultado principal
+                                // Capturamos el valor string principal (userFields concatenados)
+                                userInfo = reader.GetString(0);
                                 Console.WriteLine($"Procedure output: {userInfo}");
                             }
                         }
@@ -57,35 +57,59 @@ namespace SnipAuthServerV1.Validators
                         Console.WriteLine($"Return value: {returnValue}");
                     }
                 }
-
-                // Validación del valor de retorno
-                if (returnValue == 0) // 0 indica éxito en tu caso
-                {
-                    context.Result = new GrantValidationResult(
-                        subject: context.UserName,
-                        authenticationMethod: "custom",
-                        claims: new[]
-                        {
-                            new Claim("user_info", userInfo ?? "No Info"),
-                            new Claim("role", "user")
-                        }
-                    );
-                    Console.WriteLine("User authenticated successfully.");
-                }
-                else
+                if (returnValue != 0 || string.IsNullOrEmpty(userInfo))
                 {
                     context.Result = new GrantValidationResult(
                         TokenRequestErrors.InvalidGrant,
-                        "Invalid username or password.");
-                    Console.WriteLine("User authentication failed.");
+                        "Usuario o contraseña incorrectos.");
+                    Console.WriteLine("User authentication failed (invalid credentials).");
+                    return;
                 }
+
+                if (!userInfo.Contains("activado"))
+                {
+                    context.Result = new GrantValidationResult(
+                        TokenRequestErrors.InvalidGrant,
+                        "El usuario no está activado o respuesta inesperada.");
+                    Console.WriteLine("User not activated or unexpected SP output.");
+                    return;
+                }
+
+                var userFields = userInfo.Split(';');
+                if (userFields.Length < 14)
+                {
+                    context.Result = new GrantValidationResult(
+                        TokenRequestErrors.InvalidGrant,
+                        "Respuesta del SP con formato inválido.");
+                    Console.WriteLine("Stored procedure output has fewer fields than expected.");
+                    return;
+                }
+
+                var userId = userFields[0];
+                var nombre = userFields[2];
+                var username = userFields[7];
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, userId),
+                    new Claim(ClaimTypes.Name, nombre),
+                    new Claim("username", username),
+                    new Claim("role", "user")
+                };
+                context.Result = new GrantValidationResult(
+                    subject: userId,                 // Subject = ID de usuario
+                    authenticationMethod: "custom",  // Nombre descriptivo
+                    claims: claims
+                );
+                Console.WriteLine("User authenticated successfully.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error during validation: {ex.Message}");
                 context.Result = new GrantValidationResult(
                     TokenRequestErrors.InvalidGrant,
-                    "An error occurred while validating the user.");
+                    "Ocurrió un error al validar al usuario."
+                );
             }
         }
     }
