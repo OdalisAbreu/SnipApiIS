@@ -88,7 +88,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"{_urlApiBase}/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+            string url = $"https://localhost:7261/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
 
             // Consumir el servicio externo
             var fuenteExterna = await _externalApiService.GetFuenteExternaAsync(url, token);

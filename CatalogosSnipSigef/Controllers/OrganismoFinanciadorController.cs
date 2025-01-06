@@ -88,7 +88,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"{_urlApiBase}/api/clasificadores/sigeft/OrganismoFinanciador/{request.Idcod_orgfin}";
+            string url = $"https://localhost:7261/api/clasificadores/sigeft/OrganismoFinanciador/{request.Idcod_orgfin}";
 
             // Consumir el servicio externo
             var organismoFinanciador = await _externalApiService.GetOrganismoFinanciadorAsync(url, token);

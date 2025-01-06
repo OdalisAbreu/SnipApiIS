@@ -162,5 +162,44 @@ namespace SnipAuthServerV1.Controllers
 
             return rolesList;
         }
+
+        [HttpPost("revoke")]
+        public async Task<IActionResult> RevokeTokenFromHeader()
+        {
+            // Obtener el token del encabezado 'Authorization'
+            if (!Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
+            {
+                return BadRequest("El encabezado 'Authorization' es requerido.");
+            }
+
+            // Validar el formato del token
+            var token = authorizationHeader.ToString().Replace("Bearer ", "").Trim();
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("El token en el encabezado 'Authorization' no es válido.");
+            }
+
+            // Solicitar revocación al IdentityServer
+            var client = _httpClientFactory.CreateClient();
+            var revokeRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7079/connect/revocation")
+            {
+                Content = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("token", token),
+                    new KeyValuePair<string, string>("token_type_hint", "access_token"), // Asume que es un access token
+                    new KeyValuePair<string, string>("client_id", "client_id"),
+                    new KeyValuePair<string, string>("client_secret", "client_secret")
+                 })
+            };
+
+            var response = await client.SendAsync(revokeRequestMessage);
+            if (!response.IsSuccessStatusCode)
+            {
+                SentrySdk.CaptureMessage("Error al revocar el token.");
+                return StatusCode((int)response.StatusCode, "Error al revocar el token.");
+            }
+            SentrySdk.CaptureMessage($"Token de usuario revocado a las {DateTime.UtcNow}");
+            return Ok("Token revocado exitosamente.");
+        }
     }
 }
