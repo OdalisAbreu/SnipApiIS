@@ -5,6 +5,8 @@ using CatalogosSnipSigef.Services;
 using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Data.SqlClient;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace CatalogosSnipSigef.Controllers
 {
@@ -15,16 +17,21 @@ namespace CatalogosSnipSigef.Controllers
     {
         private readonly IDbConnection _dbConnection;
         private readonly ExternalApiService _externalApiService;
+        private readonly string _urlApiBase;
 
-        public CuentaPresupuestaria(IDbConnection dbConnection, ExternalApiService externalApiService)
+        public CuentaPresupuestaria(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
         {
             _dbConnection = dbConnection;
             _externalApiService = externalApiService;
+            _urlApiBase = configuration["SigefApi:Url"];
         }
 
         [HttpGet]
         public async Task<IActionResult> getObjetales([FromQuery] int? id_objetal = null)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+           
             var query = "SELECT * FROM cla_objetales WHERE activo = 'S' AND 1=1";
             var parameters = new DynamicParameters();
 
@@ -68,6 +75,8 @@ namespace CatalogosSnipSigef.Controllers
 
             // Autenticación: Obtener el token de acceso
             var token = await _externalApiService.GetAuthTokenAsync();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
             if (string.IsNullOrEmpty(token))
             {
@@ -79,7 +88,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto/{request.cod_objetal}";
+            string url = $"{_urlApiBase}/api/clasificadores/sigeft/ObjetosGasto/{request.cod_objetal}";
 
             // Consumir el servicio externo
             var fuenteExterna = await _externalApiService.GetCuentaPresupuestariaAsync(url, token);
@@ -109,9 +118,9 @@ namespace CatalogosSnipSigef.Controllers
                 inversion = "S",
                 estado = "registrar",
                 bandeja = 0,
-                usu_ins = 1,
+                usu_ins = userId,
                 fec_ins = DateTime.Now,
-                usu_upd = 1,
+                usu_upd = userId,
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
 
@@ -134,6 +143,9 @@ namespace CatalogosSnipSigef.Controllers
                 });
             }
 
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             try
             {
                 // Obtener los datos actuales con f_cla_fuentes_generales_leer
@@ -141,7 +153,7 @@ namespace CatalogosSnipSigef.Controllers
                 {
                     id_objetal = id,
                     estado = "S",
-                    usu_upd = 1
+                    usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
 
                 if (datosExistentes == null)
@@ -164,9 +176,9 @@ namespace CatalogosSnipSigef.Controllers
                 var activo = !string.IsNullOrEmpty(request.activo) ? request.activo : datosExistentes.activo;
                 var estado = "actualizar";
                 var bandeja = request.bandeja ?? datosExistentes.bandeja;
-                var usuIns = 1;
+                var usuIns = userId;
                 var fecIns = request.fec_ins ?? datosExistentes.fec_ins;
-                var usuUpd = 1;
+                var usuUpd = userId;
                 var fecUpd = request.fec_upd ?? datosExistentes.fec_upd;
 
                 // Crear parámetros para el procedimiento de actualización
@@ -218,12 +230,15 @@ namespace CatalogosSnipSigef.Controllers
         public async Task<IActionResult> DeleteObjetales(int id)
         {
 
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
             // Validar si la fuente existe
             var existe = _dbConnection.ExecuteScalar<int>("dbo.[f_cla_objetales_leer]", new
             {
                 id_objetal = id,
                 estado = "S",
-                usu_upd = 1 // Usuario de validación
+                usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
             if (existe <= 0)
@@ -240,7 +255,7 @@ namespace CatalogosSnipSigef.Controllers
             {
                 id_objetal = id,
                 estado = "S",
-                usu_upd = 1 // Usuario que realiza la acción
+                usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
             return Ok(new

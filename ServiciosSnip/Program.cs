@@ -17,7 +17,7 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 builder.Services.AddAuthentication("Bearer")
     .AddOAuth2Introspection("Bearer", options =>
     {
-        options.Authority = "https://localhost:7079";
+        options.Authority = builder.Configuration["Authentication:Authority"];
         options.ClientId = "client_id";
         options.ClientSecret = "client_secret";
     });

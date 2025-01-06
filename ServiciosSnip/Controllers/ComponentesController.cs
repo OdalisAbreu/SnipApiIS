@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
+using System.Security.Claims;
 
 namespace SnipAuthServerV1.Controllers
 {
@@ -23,7 +24,12 @@ namespace SnipAuthServerV1.Controllers
         public async Task<IActionResult> componentes([FromQuery] int? id_cla_componente = null)
         {
             var fechaHora = DateTime.Now;
-            var usuario = User.Identity?.Name ?? "Usuario anónimo";
+
+            //var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
+
+          //  return Ok(new { userId, userName, claims });
 
             using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
 
@@ -53,17 +59,15 @@ namespace SnipAuthServerV1.Controllers
             var totalRegistros = result.Count;
             // Obtener la dirección IP del usuario
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            SentrySdk.CaptureMessage($"Consulta el endpoint Topologias a las {DateTime.Now}, desde ip: {ipAddress}");
+            SentrySdk.CaptureMessage($"Usuario: {userName} Consulta el endpoint de Topologias a las {DateTime.Now}, desde ip: {ipAddress}");
             
             var objet = new List<object>();
             objet.Add(new
             {
                 total_registros = totalRegistros,
-                cla_componentes = new List<object>(result),
+                cla_componentes = new List<object>(result)
             });            
             return Ok(objet[0]);
-            
-            //return Ok(result);
         }
     }
 }
