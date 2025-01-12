@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.OpenApi.Models;
 using CatalogosSnipSigef.Services;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,8 +52,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
+builder.Services.AddScoped<ILogService, LogService>();
 // Agregar autorización
 builder.Services.AddAuthorization();
 // Agregar controladores

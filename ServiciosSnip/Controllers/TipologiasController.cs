@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ServiciosSnip.Services;
 using System.Data.SqlClient;
 using System.Security.Claims;
 
@@ -12,11 +13,13 @@ namespace SnipAuthServerV1.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<TipologiasController> _logger;
+        private readonly ILogService _logService;
 
-        public TipologiasController(IConfiguration configuration, ILogger<TipologiasController> logger)
+        public TipologiasController(IConfiguration configuration, ILogger<TipologiasController> logger, ILogService logService)
         {
             _configuration = configuration;
             _logger = logger;
+            _logService = logService;
         }
 
         [HttpGet]
@@ -55,6 +58,7 @@ namespace SnipAuthServerV1.Controllers
             // Obtener la dirección IP del usuario
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             SentrySdk.CaptureMessage($"Consulta Usuario: {userName} al endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}");
+            await _logService.LogAsync("Info", $"Consulta Usuario: {userName} al endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}", int.Parse(userId));
 
             var objet = new List<object>();
             objet.Add(new

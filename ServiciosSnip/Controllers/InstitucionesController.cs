@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using Dapper;
 using System.Security.Claims;
+using ServiciosSnip.Services;
 
 namespace SnipAuthServerV1.Controllers
 {
@@ -12,11 +13,13 @@ namespace SnipAuthServerV1.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<InstitucionesController> _logger;
+        private readonly ILogService _logService;
 
-        public InstitucionesController(IConfiguration configuration, ILogger<InstitucionesController> logger)
+        public InstitucionesController(IConfiguration configuration, ILogger<InstitucionesController> logger, ILogService logService)
         {
             _configuration = configuration;
             _logger = logger;
+            _logService = logService;
         }
 
         [HttpGet]
@@ -101,6 +104,8 @@ namespace SnipAuthServerV1.Controllers
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
             SentrySdk.CaptureMessage($"Consulta Usuario: {userName} al endpoint GetInstituciones desde IP {ipAddress} a las {DateTime.UtcNow}");
+            await _logService.LogAsync("Info", $"Consulta Usuario: {userName} al endpoint GetInstituciones desde IP {ipAddress} a las {DateTime.UtcNow}", int.Parse(userId));
+
             var objet = new List<object>();
             objet.Add(new
             {

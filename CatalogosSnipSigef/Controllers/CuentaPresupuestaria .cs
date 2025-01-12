@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Data.SqlClient;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Routing;
+using System.Net;
 
 namespace CatalogosSnipSigef.Controllers
 {
@@ -18,12 +19,14 @@ namespace CatalogosSnipSigef.Controllers
         private readonly IDbConnection _dbConnection;
         private readonly ExternalApiService _externalApiService;
         private readonly string _urlApiBase;
+        private readonly ILogService _logService;
 
-        public CuentaPresupuestaria(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
+        public CuentaPresupuestaria(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration, ILogService logService)
         {
             _dbConnection = dbConnection;
             _externalApiService = externalApiService;
             _urlApiBase = configuration["SigefApi:Url"];
+            _logService = logService;
         }
 
         [HttpGet]
@@ -58,21 +61,13 @@ namespace CatalogosSnipSigef.Controllers
                 total_registros = totalRegistros,
                 cla_objetales = objetales
             });
+            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta objetales", int.Parse(userId));
             return Ok(objet[0]);
         }
 
         [HttpPost]
-        public async Task<IActionResult> InsertObjetalesFromExternalService([FromBody] CodObjetalRequest request)
+        public async Task<IActionResult> InsertObjetalesFromExternalService([FromBody] CodObjetalRequest? request)
         {
-            if (string.IsNullOrEmpty(request.cod_objetal))
-            {
-                return BadRequest(new
-                {
-                    estatus_code = "400",
-                    estatus_msg = "El campo 'codFteGral' es obligatorio."
-                });
-            }
-
             // Autenticación: Obtener el token de acceso
             var token = await _externalApiService.GetAuthTokenAsync();
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
@@ -87,6 +82,78 @@ namespace CatalogosSnipSigef.Controllers
                 });
             }
 
+
+            if (request == null ||  string.IsNullOrEmpty(request.cod_objetal))
+            {
+                var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
+                string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto";
+
+                var cuentaPresupestariaResponse = await _externalApiService.GetCuentasPresupuestariasAsync(urlFull, token);
+
+                if(cuentaPresupestariaResponse != null && cuentaPresupestariaResponse.datos != null)
+                {
+                    foreach(var cuenta in cuentaPresupestariaResponse.datos) 
+                    {
+                        try 
+                        {
+                            // Insertar en la base de datos utilizando el procedimiento almacenado
+                            var resultJson = _dbConnection.Execute("dbo.f_cla_objetales_ins", new
+                            {
+                                id_objetal = 0, //Indica que deseas asignar el ID automáticamente
+                                id_version = 1,
+                                cod_objetal = cuenta.cod_tipo + '.' + cuenta.cod_objeto + '.' + cuenta.cod_cuenta + '.' + cuenta.cod_sub_cuenta + '.' + cuenta.cod_auxiliar,
+                                descripcion = cuenta.descripcion_objeto,
+                                cod_objetal_superior = cuenta.cod_tipo + '.' + cuenta.cod_objeto + '.' + cuenta.cod_cuenta + '.' + cuenta.cod_sub_cuenta,
+                                cod_despliegue = cuenta.cod_tipo + cuenta.cod_objeto + cuenta.cod_cuenta + cuenta.cod_sub_cuenta + cuenta.cod_auxiliar,
+                                activo = cuenta.estado == "habilitado" ? "S" : "N",
+                                terminal = "S",
+                                inversion = "S",
+                                estado = "registrar",
+                                bandeja = 0,
+                                usu_ins = userId,
+                                fec_ins = DateTime.Now,
+                                usu_upd = userId,
+                                fec_upd = DateTime.Now,
+                            }, commandType: CommandType.StoredProcedure);
+                            // Construir la entrada de éxito
+                            responseJson.Add(new
+                            {
+                                status = "create",
+                                cod_objetal = $"{cuenta.cod_tipo}{cuenta.cod_objeto}{cuenta.cod_cuenta}{cuenta.cod_sub_cuenta}{cuenta.cod_auxiliar}",
+                                descripcion = cuenta.descripcion_objeto
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            // Construir la entrada de error
+                            responseJson.Add(new
+                            {
+                                status = "fail",
+                                cod_objetal = $"{cuenta.cod_tipo}{cuenta.cod_objeto}{cuenta.cod_cuenta}{cuenta.cod_sub_cuenta}{cuenta.cod_auxiliar}",
+                                details = ex.Message
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    return BadRequest(new
+                    {
+                        estatus_code = "404",
+                        estatus_msg = "No se encontraron objetales externss para insertar."
+                    });
+                }
+                await _logService.LogAsync("Info", $"Usuario: {userName} Registra objetales", int.Parse(userId));
+                return Ok(new
+                {
+                    estatus_code = "201",
+                    estatus_msg = "Objetales registrados correctamente a partir del servicio externo.",
+                    register_status = responseJson
+                });
+
+
+            }
+
             // Construir la URL con los parámetros requeridos
             string url = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto/{request.cod_objetal}";
 
@@ -98,7 +165,7 @@ namespace CatalogosSnipSigef.Controllers
                 return BadRequest(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontraron fuentes externas para insertar."
+                    estatus_msg = "No se encontraron objetales externos para insertar."
                 });
             }
 
@@ -124,10 +191,12 @@ namespace CatalogosSnipSigef.Controllers
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
 
+            await _logService.LogAsync("Info", $"Usuario: {userName} Registra objetales", int.Parse(userId));
+
             return Ok(new
             {
                 estatus_code = "201",
-                estatus_msg = "Fuente registrada correctamente a partir del servicio externo."
+                estatus_msg = "Objetal registrado correctamente a partir del servicio externo."
             });
         }
 
@@ -161,7 +230,7 @@ namespace CatalogosSnipSigef.Controllers
                     return NotFound(new
                     {
                         estatus_code = "404",
-                        estatus_msg = "No se encontró la fuente especificada."
+                        estatus_msg = "No se encontró el objetal especificada."
                     });
                 }
 
@@ -201,27 +270,30 @@ namespace CatalogosSnipSigef.Controllers
                 // Ejecutar el procedimiento de actualización
                 var returnValue = _dbConnection.QuerySingle<int>("dbo.f_cla_objetales_upd", parametros, commandType: CommandType.StoredProcedure);
 
+                await _logService.LogAsync("Info", $"Usuario: {userName} actualiza objetales id: {id}", int.Parse(userId));
+
                 if (returnValue > 0)
                 {
                     return Ok(new
                     {
                         estatus_code = "200",
-                        estatus_msg = "Fuente actualizada correctamente."
+                        estatus_msg = "Objetal actualizada correctamente."
                     });
                 }
 
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
-                    estatus_msg = "No se pudo actualizar la fuente."
+                    estatus_msg = "No se pudo actualizar el Objetal."
                 });
             }
             catch (Exception ex)
             {
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} actualiza objetal id: {id}", int.Parse(userId));
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
-                    estatus_msg = "Ocurrió un error al intentar actualizar la fuente.",
+                    estatus_msg = "Ocurrió un error al intentar actualizar el Objetal.",
                     detalle_error = ex.Message
                 });
             }
@@ -246,7 +318,7 @@ namespace CatalogosSnipSigef.Controllers
                 return NotFound(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontró la fuente especificada."
+                    estatus_msg = "No se encontró el Objetal especificado."
                 });
             }
 
@@ -258,10 +330,12 @@ namespace CatalogosSnipSigef.Controllers
                 usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
+            await _logService.LogAsync("Info", $"Usuario: {userName} Elimina objetal id: {id}", int.Parse(userId));
+
             return Ok(new
             {
                 estatus_code = "200",
-                estatus_msg = "Fuente eliminada correctamente."
+                estatus_msg = "Objetal eliminado correctamente."
             });
 
         }
