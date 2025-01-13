@@ -91,29 +91,71 @@ namespace CatalogosSnipSigef.Controllers
                     {
                         try
                         {
-                            var resultJson = _dbConnection.Execute("dbo.f_cla_funcional_ins", new
+                            // Validar si ya existe el registro en la base de datos
+                            var existingFuncional = _dbConnection.QueryFirstOrDefault("SELECT * FROM cla_funcional WHERE cod_finalidad = @cod_finalidad AND cod_funcion = @cod_funcion AND cod_sub_funcion = @cod_sub_funcion",
+                                new
+                                {
+                                    cod_finalidad = fuente.cod_finalidad,
+                                    cod_funcion = fuente.cod_funcion,
+                                    cod_sub_funcion = fuente.cod_sub_funcion
+                                });
+
+                            if (existingFuncional != null)
                             {
-                                id_funcional = 0, //Indica que deseas asignar el ID automáticamente
-                                cod_finalidad = fuente.cod_finalidad,
-                                cod_funcion = fuente.cod_funcion,
-                                cod_sub_funcion = fuente.cod_sub_funcion,
-                                descripcion = fuente.descripcion_sub_funcion,
-                                terminal = "S",
-                                activo = fuente.estado == "habilitado" ? "S" : "N",
-                                estado = "registrar",
-                                bandeja = 0,
-                                usu_ins = userId,
-                                fec_ins = DateTime.Now,
-                                usu_upd = userId,
-                                fec_upd = DateTime.Now,
-                            }, commandType: CommandType.StoredProcedure);
-                            // Construir la entrada de éxito
-                            responseJson.Add(new
+                                // Actualizar el registro existente
+                                var parametros = new DynamicParameters();
+                                parametros.Add("id_funcional", existingFuncional.id_funcional);
+                                parametros.Add("cod_finalidad", fuente.cod_finalidad);
+                                parametros.Add("cod_funcion", fuente.cod_funcion);
+                                parametros.Add("cod_sub_funcion", fuente.cod_sub_funcion);
+                                parametros.Add("descripcion", fuente.descripcion_sub_funcion);
+                                parametros.Add("terminal", "S");
+                                parametros.Add("activo", fuente.estado == "habilitado" ? "S" : "N");
+                                parametros.Add("estado", "actualizar");
+                                parametros.Add("bandeja", 0);
+                                parametros.Add("usu_ins", existingFuncional.usu_ins); // Mantener el usuario original de inserción
+                                parametros.Add("fec_ins", existingFuncional.fec_ins); // Mantener la fecha original de inserción
+                                parametros.Add("usu_upd", userId);
+                                parametros.Add("fec_upd", DateTime.Now);
+
+                                var returnValue = _dbConnection.QuerySingle<int>("dbo.f_cla_funcional_upd", parametros, commandType: CommandType.StoredProcedure);
+
+                                // Agregar la respuesta de actualización
+                                responseJson.Add(new
+                                {
+                                    status = "update",
+                                    cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
+                                    descripcion = fuente.descripcion_sub_funcion
+                                });
+                            }
+                            else
                             {
-                                status = "create",
-                                cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
-                                descripcion = fuente.descripcion_sub_funcion
-                            });
+                                // Insertar un nuevo registro si no existe
+                                var resultJson = _dbConnection.Execute("dbo.f_cla_funcional_ins", new
+                                {
+                                    id_funcional = 0, // Indica que deseas asignar el ID automáticamente
+                                    cod_finalidad = fuente.cod_finalidad,
+                                    cod_funcion = fuente.cod_funcion,
+                                    cod_sub_funcion = fuente.cod_sub_funcion,
+                                    descripcion = fuente.descripcion_sub_funcion,
+                                    terminal = "S",
+                                    activo = fuente.estado == "habilitado" ? "S" : "N",
+                                    estado = "registrar",
+                                    bandeja = 0,
+                                    usu_ins = userId,
+                                    fec_ins = DateTime.Now,
+                                    usu_upd = userId,
+                                    fec_upd = DateTime.Now,
+                                }, commandType: CommandType.StoredProcedure);
+
+                                // Agregar la respuesta de creación
+                                responseJson.Add(new
+                                {
+                                    status = "create",
+                                    cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
+                                    descripcion = fuente.descripcion_sub_funcion
+                                });
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -124,11 +166,9 @@ namespace CatalogosSnipSigef.Controllers
                                 cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
                                 details = ex.Message
                             });
+
                         }
-
-
                     }
-
                 }
                 else
                 {
@@ -138,11 +178,12 @@ namespace CatalogosSnipSigef.Controllers
                         estatus_msg = "No se encontraron fuentes externas para insertar."
                     });
                 }
-                await _logService.LogAsync("Info", $"Usuario: {userName} Registra Funcionales", int.Parse(userId));
+
+                await _logService.LogAsync("Info", $"Usuario: {userName} procesa fuentes funcionales masivas", int.Parse(userId));
                 return Ok(new
                 {
                     estatus_code = "201",
-                    estatus_msg = "Fuentes registradas correctamente a partir del servicio externo.",
+                    estatus_msg = "Fuentes funcionales procesadas correctamente.",
                     register_status = responseJson
                 });
             }

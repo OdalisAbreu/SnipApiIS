@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ServiciosSnip.Models
 {
-    [Table("cla_logs")] // Especifica el nombre de la tabla
+    [Table("trd_logs")] // Especifica el nombre de la tabla
     public class Log
     {
         [Key]
@@ -12,5 +12,14 @@ namespace ServiciosSnip.Models
         public string description { get; set; } = string.Empty;
         public DateTime date { get; set; }
         public int user_id { get; set; }
+
+        public string? ip { get; set; }
+
+        public string? end_point { get; set; }
+        public string? input { get; set; }
+
+        public string? output { get; set; }
+
+        public string? method { get; set; }
     }
 }

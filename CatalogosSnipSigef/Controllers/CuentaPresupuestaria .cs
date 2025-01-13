@@ -83,45 +83,86 @@ namespace CatalogosSnipSigef.Controllers
             }
 
 
-            if (request == null ||  string.IsNullOrEmpty(request.cod_objetal))
+            if (request == null || string.IsNullOrEmpty(request.cod_objetal))
             {
                 var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
                 string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto";
 
                 var cuentaPresupestariaResponse = await _externalApiService.GetCuentasPresupuestariasAsync(urlFull, token);
 
-                if(cuentaPresupestariaResponse != null && cuentaPresupestariaResponse.datos != null)
+                if (cuentaPresupestariaResponse != null && cuentaPresupestariaResponse.datos != null)
                 {
-                    foreach(var cuenta in cuentaPresupestariaResponse.datos) 
+                    foreach (var cuenta in cuentaPresupestariaResponse.datos)
                     {
-                        try 
+                        try
                         {
-                            // Insertar en la base de datos utilizando el procedimiento almacenado
-                            var resultJson = _dbConnection.Execute("dbo.f_cla_objetales_ins", new
+                            // Generar código objetal
+                            var codObjetal = $"{cuenta.cod_tipo}.{cuenta.cod_objeto}.{cuenta.cod_cuenta}.{cuenta.cod_sub_cuenta}.{cuenta.cod_auxiliar}";
+
+                            // Validar si ya existe en la base de datos
+                            var existingObjetal = _dbConnection.QueryFirstOrDefault("SELECT * FROM cla_objetales WHERE cod_objetal = @cod_objetal",
+                                new { cod_objetal = codObjetal });
+
+                            if (existingObjetal != null)
                             {
-                                id_objetal = 0, //Indica que deseas asignar el ID automáticamente
-                                id_version = 1,
-                                cod_objetal = cuenta.cod_tipo + '.' + cuenta.cod_objeto + '.' + cuenta.cod_cuenta + '.' + cuenta.cod_sub_cuenta + '.' + cuenta.cod_auxiliar,
-                                descripcion = cuenta.descripcion_objeto,
-                                cod_objetal_superior = cuenta.cod_tipo + '.' + cuenta.cod_objeto + '.' + cuenta.cod_cuenta + '.' + cuenta.cod_sub_cuenta,
-                                cod_despliegue = cuenta.cod_tipo + cuenta.cod_objeto + cuenta.cod_cuenta + cuenta.cod_sub_cuenta + cuenta.cod_auxiliar,
-                                activo = cuenta.estado == "habilitado" ? "S" : "N",
-                                terminal = "S",
-                                inversion = "S",
-                                estado = "registrar",
-                                bandeja = 0,
-                                usu_ins = userId,
-                                fec_ins = DateTime.Now,
-                                usu_upd = userId,
-                                fec_upd = DateTime.Now,
-                            }, commandType: CommandType.StoredProcedure);
-                            // Construir la entrada de éxito
-                            responseJson.Add(new
+                                // Actualizar el registro existente
+                                var parametros = new DynamicParameters();
+                                parametros.Add("id_objetal", existingObjetal.id_objetal);
+                                parametros.Add("id_version", 1);
+                                parametros.Add("cod_objetal", codObjetal);
+                                parametros.Add("descripcion", cuenta.descripcion_objeto);
+                                parametros.Add("cod_objetal_superior", $"{cuenta.cod_tipo}.{cuenta.cod_objeto}.{cuenta.cod_cuenta}.{cuenta.cod_sub_cuenta}");
+                                parametros.Add("cod_despliegue", $"{cuenta.cod_tipo}{cuenta.cod_objeto}{cuenta.cod_cuenta}{cuenta.cod_sub_cuenta}{cuenta.cod_auxiliar}");
+                                parametros.Add("terminal", "S");
+                                parametros.Add("inversion", "S");
+                                parametros.Add("activo", cuenta.estado == "habilitado" ? "S" : "N");
+                                parametros.Add("estado", "actualizar");
+                                parametros.Add("bandeja", 0);
+                                parametros.Add("fec_ins", existingObjetal.fec_ins); // Mantener la fecha de inserción original
+                                parametros.Add("usu_ins", existingObjetal.usu_ins); // Mantener el usuario de inserción original
+                                parametros.Add("usu_upd", userId);
+                                parametros.Add("fec_upd", DateTime.Now);
+
+                                var returnValue = _dbConnection.QuerySingle<int>("dbo.f_cla_objetales_upd", parametros, commandType: CommandType.StoredProcedure);
+
+                                // Construir la entrada de actualización
+                                responseJson.Add(new
+                                {
+                                    status = "update",
+                                    cod_objetal = codObjetal,
+                                    descripcion = cuenta.descripcion_objeto
+                                });
+                            }
+                            else
                             {
-                                status = "create",
-                                cod_objetal = $"{cuenta.cod_tipo}{cuenta.cod_objeto}{cuenta.cod_cuenta}{cuenta.cod_sub_cuenta}{cuenta.cod_auxiliar}",
-                                descripcion = cuenta.descripcion_objeto
-                            });
+                                // Insertar un nuevo registro si no existe
+                                var resultJson = _dbConnection.Execute("dbo.f_cla_objetales_ins", new
+                                {
+                                    id_objetal = 0, // Indica que deseas asignar el ID automáticamente
+                                    id_version = 1,
+                                    cod_objetal = codObjetal,
+                                    descripcion = cuenta.descripcion_objeto,
+                                    cod_objetal_superior = $"{cuenta.cod_tipo}.{cuenta.cod_objeto}.{cuenta.cod_cuenta}.{cuenta.cod_sub_cuenta}",
+                                    cod_despliegue = $"{cuenta.cod_tipo}{cuenta.cod_objeto}{cuenta.cod_cuenta}{cuenta.cod_sub_cuenta}{cuenta.cod_auxiliar}",
+                                    activo = cuenta.estado == "habilitado" ? "S" : "N",
+                                    terminal = "S",
+                                    inversion = "S",
+                                    estado = "registrar",
+                                    bandeja = 0,
+                                    usu_ins = userId,
+                                    fec_ins = DateTime.Now,
+                                    usu_upd = userId,
+                                    fec_upd = DateTime.Now,
+                                }, commandType: CommandType.StoredProcedure);
+
+                                // Construir la entrada de éxito
+                                responseJson.Add(new
+                                {
+                                    status = "create",
+                                    cod_objetal = codObjetal,
+                                    descripcion = cuenta.descripcion_objeto
+                                });
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -129,9 +170,10 @@ namespace CatalogosSnipSigef.Controllers
                             responseJson.Add(new
                             {
                                 status = "fail",
-                                cod_objetal = $"{cuenta.cod_tipo}{cuenta.cod_objeto}{cuenta.cod_cuenta}{cuenta.cod_sub_cuenta}{cuenta.cod_auxiliar}",
+                                cod_objetal = $"{cuenta.cod_tipo}.{cuenta.cod_objeto}.{cuenta.cod_cuenta}.{cuenta.cod_sub_cuenta}.{cuenta.cod_auxiliar}",
                                 details = ex.Message
                             });
+
                         }
                     }
                 }
@@ -140,18 +182,17 @@ namespace CatalogosSnipSigef.Controllers
                     return BadRequest(new
                     {
                         estatus_code = "404",
-                        estatus_msg = "No se encontraron objetales externss para insertar."
+                        estatus_msg = "No se encontraron objetales externos para insertar."
                     });
                 }
-                await _logService.LogAsync("Info", $"Usuario: {userName} Registra objetales", int.Parse(userId));
+
+                await _logService.LogAsync("Info", $"Usuario: {userName} procesa objetales masivos", int.Parse(userId));
                 return Ok(new
                 {
                     estatus_code = "201",
-                    estatus_msg = "Objetales registrados correctamente a partir del servicio externo.",
+                    estatus_msg = "Proceso completado con éxito.",
                     register_status = responseJson
                 });
-
-
             }
 
             // Construir la URL con los parámetros requeridos

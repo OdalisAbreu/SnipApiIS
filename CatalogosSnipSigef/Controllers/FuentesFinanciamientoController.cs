@@ -124,93 +124,177 @@ namespace CatalogosSnipSigef.Controllers
 
             if (request == null || string.IsNullOrEmpty(request.cod_fte_gral))
             {
-
                 var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
                 string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento";
 
                 // Consumir el servicio externo
                 var fuenteFinanciamientoResponse = await _externalApiService.GetFuentesFinamciamientoAsync(urlFull, token);
 
-                if(fuenteFinanciamientoResponse != null && fuenteFinanciamientoResponse.datos != null) 
+                if (fuenteFinanciamientoResponse != null && fuenteFinanciamientoResponse.datos != null)
                 {
-                    foreach(var fuente in fuenteFinanciamientoResponse.datos)
+                    foreach (var fuente in fuenteFinanciamientoResponse.datos)
                     {
                         try
                         {
-                            var resultGenJson = _dbConnection.QuerySingle<int>("dbo.f_cla_fuentes_generales_ins", new
-                            {
-                                id_fte_gral = 0, //Indica que deseas asignar el ID automáticamente
-                                id_version = 1,
-                                cod_fte_gral = fuente.cod_fuente,
-                                descripcion = fuente.descripcion_fuente.ToUpper(),
-                                tipo_fuente = fuente.descripcion_grupo == "1" ? "I" : "E",
-                                activo = fuente.estado == "habilitado" ? "S" : "N",
-                                estado = "registrar",
-                                bandeja = 0,
-                                usu_ins = userId,
-                                fec_ins = DateTime.Now,
-                                usu_upd = userId,
-                                fec_upd = DateTime.Now,
-                            }, commandType: CommandType.StoredProcedure);
+                            // Validar si la fuente general ya existe
+                            var existingFuenteGeneral = _dbConnection.QueryFirstOrDefault("SELECT * FROM cla_fuentes_generales WHERE cod_fte_gral = @cod_fte_gral",
+                                new { cod_fte_gral = fuente.cod_fuente });
 
+                            int idFuenteGeneral;
 
-                            var resultEspJson = _dbConnection.Execute("dbo.f_cla_fuentes_especificas_ins", new
+                            if (existingFuenteGeneral != null)
                             {
-                                id_fte_esp = 0, //Indica que deseas asignar el ID automáticamente
-                                id_version = 1,
-                                id_fte_gral = resultGenJson,
-                                cod_fte_esp = fuente.cod_fuente_especifica,
-                                descripcion = fuente.descripcion_fuente_especifica.ToUpper(),
-                                activo = fuente.estado == "habilitado" ? "S" : "N",
-                                estado = "registrar",
-                                bandeja = 0,
-                                usu_ins = userId,
-                                fec_ins = DateTime.Now,
-                                usu_upd = userId,
-                                fec_upd = DateTime.Now,
-                            }, commandType: CommandType.StoredProcedure);
-                            // Construir la entrada de éxito
-                            responseJson.Add(new
+                                // Actualizar la fuente general existente
+                                var parametros = new DynamicParameters();
+                                parametros.Add("id_fte_gral", existingFuenteGeneral.id_fte_gral);
+                                parametros.Add("id_version", 1);
+                                parametros.Add("cod_fte_gral", fuente.cod_fuente);
+                                parametros.Add("descripcion", fuente.descripcion_fuente.ToUpper());
+                                parametros.Add("tipo_fuente", fuente.descripcion_grupo == "1" ? "I" : "E");
+                                parametros.Add("activo", fuente.estado == "habilitado" ? "S" : "N");
+                                parametros.Add("estado", "actualizar");
+                                parametros.Add("bandeja", 0);
+                                parametros.Add("usu_ins", existingFuenteGeneral.usu_ins); // Mantener el usuario original
+                                parametros.Add("fec_ins", existingFuenteGeneral.fec_ins); // Mantener la fecha original
+                                parametros.Add("usu_upd", userId);
+                                parametros.Add("fec_upd", DateTime.Now);
+
+                                idFuenteGeneral = _dbConnection.QuerySingle<int>("dbo.f_cla_fuentes_generales_upd", parametros, commandType: CommandType.StoredProcedure);
+
+                                // Respuesta de actualización
+                                responseJson.Add(new
+                                {
+                                    status = "update fuente general",
+                                    cod_fte_gral = fuente.cod_fuente,
+                                    descripcion = fuente.descripcion_fuente.ToUpper()
+                                });
+                            }
+                            else
                             {
-                                status = "create",
-                                cod_fte_gral = $"{fuente.cod_grupo}{fuente.cod_fuente.ToUpper()}{fuente.cod_fuente_especifica}",
-                                descripcion = fuente.descripcion_fuente.ToUpper()
-                            });
+                                // Insertar una nueva fuente general
+                                idFuenteGeneral = _dbConnection.QuerySingle<int>("dbo.f_cla_fuentes_generales_ins", new
+                                {
+                                    id_fte_gral = 0,
+                                    id_version = 1,
+                                    cod_fte_gral = fuente.cod_fuente,
+                                    descripcion = fuente.descripcion_fuente.ToUpper(),
+                                    tipo_fuente = fuente.descripcion_grupo == "1" ? "I" : "E",
+                                    activo = fuente.estado == "habilitado" ? "S" : "N",
+                                    estado = "registrar",
+                                    bandeja = 0,
+                                    usu_ins = userId,
+                                    fec_ins = DateTime.Now,
+                                    usu_upd = userId,
+                                    fec_upd = DateTime.Now,
+                                }, commandType: CommandType.StoredProcedure);
+
+                                // Respuesta de creación
+                                responseJson.Add(new
+                                {
+                                    status = "create fuente general",
+                                    cod_fte_gral = fuente.cod_fuente,
+                                    descripcion = fuente.descripcion_fuente.ToUpper()
+                                });
+                            }
+
+                            // Validar si la fuente específica ya existe
+                            var existingFuenteEspecifica = _dbConnection.QueryFirstOrDefault("SELECT * FROM cla_fuentes_especificas WHERE id_fte_gral = @id_fte_gral AND cod_fte_esp = @cod_fte_esp",
+                                new
+                                {
+                                    id_fte_gral = idFuenteGeneral,
+                                    cod_fte_esp = fuente.cod_fuente_especifica
+                                });
+
+                            if (existingFuenteEspecifica != null)
+                            {
+                                // Actualizar la fuente específica existente
+                                var parametrosEsp = new DynamicParameters();
+                                parametrosEsp.Add("id_fte_esp", existingFuenteEspecifica.id_fte_esp);
+                                parametrosEsp.Add("id_version", 1);
+                                parametrosEsp.Add("id_fte_gral", idFuenteGeneral);
+                                parametrosEsp.Add("cod_fte_esp", fuente.cod_fuente_especifica);
+                                parametrosEsp.Add("descripcion", fuente.descripcion_fuente_especifica.ToUpper());
+                                parametrosEsp.Add("activo", fuente.estado == "habilitado" ? "S" : "N");
+                                parametrosEsp.Add("estado", "actualizar");
+                                parametrosEsp.Add("bandeja", 0);
+                                parametrosEsp.Add("usu_ins", existingFuenteEspecifica.usu_ins); // Mantener el usuario original
+                                parametrosEsp.Add("fec_ins", existingFuenteEspecifica.fec_ins); // Mantener la fecha original
+                                parametrosEsp.Add("usu_upd", userId);
+                                parametrosEsp.Add("fec_upd", DateTime.Now);
+
+                                _dbConnection.QuerySingle<int>("dbo.f_cla_fuentes_especificas_upd", parametrosEsp, commandType: CommandType.StoredProcedure);
+
+                                // Respuesta de actualización
+                                responseJson.Add(new
+                                {
+                                    status = "update fuente especifica",
+                                    cod_fte_gral = $"{fuente.cod_fuente}.",
+                                    cod_fte_espe = $"{fuente.cod_fuente_especifica}",
+                                    descripcion = fuente.descripcion_fuente_especifica.ToUpper()
+                                });
+                            }
+                            else
+                            {
+                                // Insertar una nueva fuente específica
+                                _dbConnection.Execute("dbo.f_cla_fuentes_especificas_ins", new
+                                {
+                                    id_fte_esp = 0,
+                                    id_version = 1,
+                                    id_fte_gral = idFuenteGeneral,
+                                    cod_fte_esp = fuente.cod_fuente_especifica,
+                                    descripcion = fuente.descripcion_fuente_especifica.ToUpper(),
+                                    activo = fuente.estado == "habilitado" ? "S" : "N",
+                                    estado = "registrar",
+                                    bandeja = 0,
+                                    usu_ins = userId,
+                                    fec_ins = DateTime.Now,
+                                    usu_upd = userId,
+                                    fec_upd = DateTime.Now,
+                                }, commandType: CommandType.StoredProcedure);
+
+                                // Respuesta de creación
+                                responseJson.Add(new
+                                {
+                                    status = "create fuente especifica",
+                                    cod_fte_gral = $"{fuente.cod_fuente}.",
+                                    cod_fte_espe = $"{fuente.cod_fuente_especifica}",
+                                    descripcion = fuente.descripcion_fuente_especifica.ToUpper()
+                                });
+                            }
                         }
                         catch (Exception ex)
                         {
-                            // Construir la entrada de error
+                            // Manejar errores y construir la respuesta de fallo
                             responseJson.Add(new
                             {
                                 status = "fail",
-                                cod_fte_gral = $"{fuente.cod_grupo}{fuente.cod_fuente.ToUpper()}{fuente.cod_fuente_especifica}",
+                                cod_fte_gral = $"{fuente.cod_fuente}.{fuente.cod_fuente_especifica}",
                                 details = ex.Message
                             });
                         }
-
                     }
-                        await _logService.LogAsync("Info", $"Usuario: {userName} Insertar fuentes generales y especificas", int.Parse(userId));
-                        return Ok(new
-                        {
-                            estatus_code = "201",
-                            estatus_msg = "Organismos Financiadores registrados correctamente a partir del servicio externo.",
-                            register_status = responseJson
-                        });
+
+                    await _logService.LogAsync("Info", $"Usuario: {userName} Insertar fuentes generales y específicas", int.Parse(userId));
+                    return Ok(new
+                    {
+                        estatus_code = "201",
+                        estatus_msg = "Fuentes generales y específicas procesadas correctamente.",
+                        register_status = responseJson
+                    });
                 }
                 else
                 {
                     return BadRequest(new
                     {
                         estatus_code = "404",
-                        estatus_msg = "No se encontraron fuentes externas para insertar."
+                        estatus_msg = "No se encontraron fuentes externas para procesar."
                     });
                 }
-
             }
 
 
-                // Construir la URL con los parámetros requeridos
-                string url = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
+            // Construir la URL con los parámetros requeridos
+            string url = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
 
                 // Consumir el servicio externo
                 var fuenteExterna = await _externalApiService.GetFuenteFinamciamientoAsync(url, token);
