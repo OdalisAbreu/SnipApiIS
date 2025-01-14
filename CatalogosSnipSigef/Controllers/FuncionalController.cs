@@ -5,6 +5,7 @@ using System.Data;
 using CatalogosSnipSigef.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Newtonsoft.Json;
 
 
 namespace CatalogosSnipSigef.Controllers
@@ -18,12 +19,16 @@ namespace CatalogosSnipSigef.Controllers
         private readonly ExternalApiService _externalApiService;
         private readonly string _urlApiBase;
         private readonly ILogService _logService;
+        private readonly string _ip;
+        private readonly string _route;
         public FuncionalController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration, ILogService logService)
         {
             _dbConnection = dbConnection;
             _externalApiService = externalApiService;
             _urlApiBase = configuration["SigefApi:Url"];
             _logService = logService;
+            _ip = "127.0.0.1";
+            _route = "/servicios/v1/sigef/cla/funcional";
         }
 
         [HttpGet]
@@ -57,7 +62,7 @@ namespace CatalogosSnipSigef.Controllers
                 total_registros = totalRegistros,
                 cla_funcionales = funcionales
             });
-            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta Funcional", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta Funcional", int.Parse(userId), _ip, _route, $"id_funcional: {id_funcional}", JsonConvert.SerializeObject(objet[0]), "GET");
             return Ok(objet[0]);
         }
 
@@ -179,7 +184,7 @@ namespace CatalogosSnipSigef.Controllers
                     });
                 }
 
-                await _logService.LogAsync("Info", $"Usuario: {userName} procesa fuentes funcionales masivas", int.Parse(userId));
+                await _logService.LogAsync("Info", $"Usuario: {userName} procesa fuentes funcionales masivas", int.Parse(userId), _ip, _route, $"cod_objetal: null", $" estatus_code = 201, estatus_msg = Proceso completado con éxito., register_status = {responseJson}", "POST");
                 return Ok(new
                 {
                     estatus_code = "201",
@@ -221,7 +226,7 @@ namespace CatalogosSnipSigef.Controllers
                 usu_upd = userId,
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
-            await _logService.LogAsync("Info", $"Usuario: {userName} Registra Funcional a las {DateTime.Now}", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Registra Funcional a las {DateTime.Now}", int.Parse(userId), _ip, _route, $"cod_objetal: {request.cod_su_funcion}", "estatus_code = 201", "POST");
             return Ok(new
             {
                 estatus_code = "201",
@@ -294,7 +299,7 @@ namespace CatalogosSnipSigef.Controllers
 
                 if (returnValue > 0)
                 {
-                    await _logService.LogAsync("Info", $"Usuario: {userName} Actualizar Funcional id: {id}", int.Parse(userId));
+                    await _logService.LogAsync("Info", $"Usuario: {userName} Actualizar Funcional id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), " estatus_code = 200", "PUT");
                     return Ok(new
                     {
                         estatus_code = "200",
@@ -310,7 +315,7 @@ namespace CatalogosSnipSigef.Controllers
             }
             catch (Exception ex)
             {
-                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} actualiza funcional id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} actualiza funcional id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), " estatus_code = 200", "PUT");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
@@ -350,7 +355,7 @@ namespace CatalogosSnipSigef.Controllers
                     estado = "S",
                     usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
-                await _logService.LogAsync("Info", $"Usuario: {userName} Elimina funcional id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Info", $"Usuario: {userName} Elimina funcional id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
                 return Ok(new
                 {
                     estatus_code = "200",
@@ -359,7 +364,7 @@ namespace CatalogosSnipSigef.Controllers
             }
             catch (Exception ex)
             {
-                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Eliminar funcional id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Eliminar funcional id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",

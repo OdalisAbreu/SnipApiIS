@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
 using System.Security.Claims;
+using Azure.Core;
+using Newtonsoft.Json;
 
 
 namespace CatalogosSnipSigef.Controllers
@@ -23,7 +25,9 @@ namespace CatalogosSnipSigef.Controllers
             private readonly ExternalApiService _externalApiService;
             private readonly IConfiguration _configuration;
             private readonly string _urlApiBase;
-        private readonly ILogService _logService;
+            private readonly ILogService _logService;
+            private readonly string _ip;
+            private readonly string _route;
 
         public FuentesFinanciamientoController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration, ILogService logService)
             {
@@ -32,6 +36,8 @@ namespace CatalogosSnipSigef.Controllers
                 _configuration = configuration;
                 _urlApiBase = configuration["SigefApi:Url"];
                 _logService = logService;
+                _ip = "127.0.0.1";
+                _route = "/servicios/v1/sigef/cla/financiamiento/fgeneral";
         }
 
         [HttpGet]
@@ -60,7 +66,7 @@ namespace CatalogosSnipSigef.Controllers
                 });
             }
             var objet = new List<object>();
-            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta fuente generales", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta fuente generales", int.Parse(userId), _ip, _route, $"id_fte_gral: {id_fte_gral}", $"total_registros: {totalRegistros},cla_fuente_generales: {fuente_generales} ", "GET");
             objet.Add(new
             {
                 total_registros = totalRegistros,
@@ -101,7 +107,7 @@ namespace CatalogosSnipSigef.Controllers
                 total_registros = totalRegistros,
                 cla_fuente_especificas = fuente_especificas
             });
-            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta fuente especifica", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta fuente especifica", int.Parse(userId), _ip, "/servicios/v1/sigef/cla/financiamiento/fespecifica",$"id_fte_esp: {id_fte_esp}", JsonConvert.SerializeObject(objet[0]), "GET");
             return Ok(objet[0]);
         }
 
@@ -274,7 +280,7 @@ namespace CatalogosSnipSigef.Controllers
                         }
                     }
 
-                    await _logService.LogAsync("Info", $"Usuario: {userName} Insertar fuentes generales y específicas", int.Parse(userId));
+                    await _logService.LogAsync("Info", $"Usuario: {userName} Insertar fuentes generales y específicas", int.Parse(userId), _ip, _route, $"cod_fte_gral: NULL", $"estatus_code: 201, register_status: {responseJson} ", "POST");
                     return Ok(new
                     {
                         estatus_code = "201",
@@ -342,7 +348,7 @@ namespace CatalogosSnipSigef.Controllers
                     fec_upd = DateTime.Now,
                 }, commandType: CommandType.StoredProcedure);
 
-            await _logService.LogAsync("Info", $"Usuario: {userName} Insertar fuente general y especifica", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Insertar fuente general y especifica", int.Parse(userId), _ip, _route, $"cod_fte_gral: {request.cod_fte_gral}", $"estatus_code: 201, estatus_msg: Fuente registrada correctamente a partir del servicio externo.", "POST");
 
             return Ok(new
                 {
@@ -416,7 +422,7 @@ namespace CatalogosSnipSigef.Controllers
 
                 if (returnValue > 0)
                 {
-                    await _logService.LogAsync("Info", $"Usuario: {userName} Actualiza fuente general id: {id}", int.Parse(userId));
+                    await _logService.LogAsync("Info", $"Usuario: {userName} Actualiza fuente general id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), $"estatus_code: 200", "PUT");
                     return Ok(new
                     {
                         estatus_code = "200",
@@ -432,7 +438,7 @@ namespace CatalogosSnipSigef.Controllers
             }
             catch (Exception ex)
             {
-                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Actualiza objetal id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Actualiza objetal id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), $"estatus_code: 500", "PUT");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
@@ -493,7 +499,7 @@ namespace CatalogosSnipSigef.Controllers
                     estado = "S",
                     usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
-                await _logService.LogAsync("Info", $"Usuario: {userName} Elimina fuentes fuente_general_id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Info", $"Usuario: {userName} Elimina fuentes fuente_general_id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
                 return Ok(new
                 {
                     estatus_code = "200",
@@ -502,7 +508,7 @@ namespace CatalogosSnipSigef.Controllers
             }
             catch (Exception ex)
             {
-                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Eliminar objetal id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Eliminar objetal id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",

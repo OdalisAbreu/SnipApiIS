@@ -8,6 +8,8 @@ using Microsoft.Data.SqlClient;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Routing;
 using System.Net;
+using Newtonsoft.Json;
+using Azure.Core;
 
 namespace CatalogosSnipSigef.Controllers
 {
@@ -20,6 +22,8 @@ namespace CatalogosSnipSigef.Controllers
         private readonly ExternalApiService _externalApiService;
         private readonly string _urlApiBase;
         private readonly ILogService _logService;
+        private readonly string _ip;
+        private readonly string _route;
 
         public CuentaPresupuestaria(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration, ILogService logService)
         {
@@ -27,6 +31,8 @@ namespace CatalogosSnipSigef.Controllers
             _externalApiService = externalApiService;
             _urlApiBase = configuration["SigefApi:Url"];
             _logService = logService;
+            _ip = "127.0.0.1";
+            _route = "/servicios/v1/sigef/cla/cta-presupuestaria";
         }
 
         [HttpGet]
@@ -34,7 +40,7 @@ namespace CatalogosSnipSigef.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
             var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
-           
+
             var query = "SELECT * FROM cla_objetales WHERE activo = 'S' AND 1=1";
             var parameters = new DynamicParameters();
 
@@ -47,7 +53,7 @@ namespace CatalogosSnipSigef.Controllers
             var objetales = await _dbConnection.QueryAsync(query, parameters);
             var totalRegistros = objetales.Count();
 
-            if (totalRegistros < 1) 
+            if (totalRegistros < 1)
             {
                 return BadRequest(new
                 {
@@ -61,7 +67,7 @@ namespace CatalogosSnipSigef.Controllers
                 total_registros = totalRegistros,
                 cla_objetales = objetales
             });
-            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta objetales", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta objetales", int.Parse(userId), _ip, _route, $"id_objetal: {id_objetal}", JsonConvert.SerializeObject(objet[0]), "GET");
             return Ok(objet[0]);
         }
 
@@ -186,7 +192,7 @@ namespace CatalogosSnipSigef.Controllers
                     });
                 }
 
-                await _logService.LogAsync("Info", $"Usuario: {userName} procesa objetales masivos", int.Parse(userId));
+                await _logService.LogAsync("Info", $"Usuario: {userName} procesa objetales masivos", int.Parse(userId), _ip, _route, $"cod_objetal: null", $" estatus_code = 201, estatus_msg = Proceso completado con éxito., register_status = {responseJson}", "POST");
                 return Ok(new
                 {
                     estatus_code = "201",
@@ -210,7 +216,7 @@ namespace CatalogosSnipSigef.Controllers
                 });
             }
 
-  
+
 
             // Insertar en la base de datos utilizando el procedimiento almacenado
             var result = _dbConnection.Execute("dbo.f_cla_objetales_ins", new
@@ -232,7 +238,7 @@ namespace CatalogosSnipSigef.Controllers
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
 
-            await _logService.LogAsync("Info", $"Usuario: {userName} Registra objetales", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Registra objetales", int.Parse(userId), _ip, _route, $"cod_objetal: {request.cod_objetal}", "estatus_code = 201", "POST");
 
             return Ok(new
             {
@@ -311,7 +317,7 @@ namespace CatalogosSnipSigef.Controllers
                 // Ejecutar el procedimiento de actualización
                 var returnValue = _dbConnection.QuerySingle<int>("dbo.f_cla_objetales_upd", parametros, commandType: CommandType.StoredProcedure);
 
-                await _logService.LogAsync("Info", $"Usuario: {userName} actualiza objetales id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Info", $"Usuario: {userName} actualiza objetales id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), " estatus_code = 200", "PUT");
 
                 if (returnValue > 0)
                 {
@@ -330,7 +336,7 @@ namespace CatalogosSnipSigef.Controllers
             }
             catch (Exception ex)
             {
-                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} actualiza objetal id: {id}", int.Parse(userId));
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} actualiza objetal id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), " estatus_code = 200", "PUT");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
@@ -371,7 +377,7 @@ namespace CatalogosSnipSigef.Controllers
                 usu_upd = userId
             }, commandType: CommandType.StoredProcedure);
 
-            await _logService.LogAsync("Info", $"Usuario: {userName} Elimina objetal id: {id}", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Usuario: {userName} Elimina objetal id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
 
             return Ok(new
             {

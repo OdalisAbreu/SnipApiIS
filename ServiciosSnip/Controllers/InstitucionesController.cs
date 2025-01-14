@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Data.SqlClient;
 using Dapper;
 using System.Security.Claims;
 using ServiciosSnip.Services;
+using Newtonsoft.Json;
+using System.Data;
 
 namespace SnipAuthServerV1.Controllers
 {
@@ -11,15 +12,17 @@ namespace SnipAuthServerV1.Controllers
     [Route("servicios/v1/snip/cla/[controller]")]
     public class InstitucionesController : Controller
     {
-        private readonly IConfiguration _configuration;
+        private readonly IDbConnection _dbConnection;
         private readonly ILogger<InstitucionesController> _logger;
         private readonly ILogService _logService;
+        private readonly string _route;
 
-        public InstitucionesController(IConfiguration configuration, ILogger<InstitucionesController> logger, ILogService logService)
+        public InstitucionesController(IDbConnection dbConnection, ILogger<InstitucionesController> logger, ILogService logService)
         {
-            _configuration = configuration;
+            _dbConnection = dbConnection;
             _logger = logger;
             _logService = logService;
+            _route = "servicios/v1/snip/cla/instituciones";
         }
 
         [HttpGet]
@@ -31,12 +34,10 @@ namespace SnipAuthServerV1.Controllers
             [FromQuery] string? cod_subcapitulo = null,
             [FromQuery] string? cod_ue = null)
         {
-            // Obtener la hora actual y el nombre del usuario autenticado
             var fechaHora = DateTime.UtcNow; // Hora en UTC
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
             var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
-            // Validación de campos requeridos
             if ((cod_capitulo != null || cod_subcapitulo != null || cod_ue != null) &&
                 (cod_capitulo == null || cod_subcapitulo == null || cod_ue == null))
             {
@@ -48,10 +49,6 @@ namespace SnipAuthServerV1.Controllers
                 return BadRequest(new { Message = $"Faltan los siguientes campos requeridos: {string.Join(", ", missingFields)}" });
             }
 
-            // Crear conexión a la base de datos
-            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-
-            // Construir la consulta SQL dinámica
             var query = "SELECT * FROM cla_instituciones_snip WHERE 1=1";
             var parameters = new DynamicParameters();
 
@@ -75,10 +72,8 @@ namespace SnipAuthServerV1.Controllers
                 parameters.Add("cod_ue", cod_ue);
             }
 
-            // Ejecutar la consulta
-            var instituciones = await connection.QueryAsync(query, parameters);
+            var instituciones = await _dbConnection.QueryAsync(query, parameters);
 
-            // Transformar los datos al formato requerido
             var result = new List<object>();
             foreach (var institucion in instituciones)
             {
@@ -97,22 +92,19 @@ namespace SnipAuthServerV1.Controllers
                 });
             }
 
-            // Obtener el total de registros
             var totalRegistros = result.Count;
-
-            // Obtener la dirección IP del usuario
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
             SentrySdk.CaptureMessage($"Consulta Usuario: {userName} al endpoint GetInstituciones desde IP {ipAddress} a las {DateTime.UtcNow}");
-            await _logService.LogAsync("Info", $"Consulta Usuario: {userName} al endpoint GetInstituciones desde IP {ipAddress} a las {DateTime.UtcNow}", int.Parse(userId));
+            await _logService.LogAsync("Info", $"Consulta Usuario: {userName} al endpoint GetInstituciones desde IP {ipAddress} a las {DateTime.UtcNow}", int.Parse(userId), ipAddress, _route, $"id_institucion: {id_institucion},cod_inst_snip: {cod_inst_snip},cod_capitulo: {cod_capitulo},cod_subcapitulo: {cod_subcapitulo},cod_ue: {cod_ue}", JsonConvert.SerializeObject(result), "GET");
 
-            var objet = new List<object>();
-            objet.Add(new
+            var response = new
             {
                 total_registros = totalRegistros,
-                cla_instituciones = new List<object>(result),
-            });
-            return Ok(objet[0]);
+                cla_instituciones = result
+            };
+
+            return Ok(response);
         }
     }
 }

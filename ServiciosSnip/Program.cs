@@ -4,15 +4,36 @@ using Microsoft.OpenApi.Models;
 using ServiciosSnip.Services;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Collections;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar la conexión a la base de datos
-builder.Services.AddScoped<IDbConnection>(sp =>
+// Leer y desencriptar la cadena de conexión desde la variable de entorno
+string encryptedConnectionString = Environment.GetEnvironmentVariable("DB_SNIP_BID_InterOper");
+// Método para desencriptar la cadena de conexión
+static string DecryptConnectionString(string encryptedData)
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    return new SqlConnection(connectionString);
-});
+    byte[] encryptedBytes = Convert.FromBase64String(encryptedData);
+    byte[] decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.LocalMachine);
+    return System.Text.Encoding.UTF8.GetString(decryptedBytes);
+}
+
+if (string.IsNullOrEmpty(encryptedConnectionString))
+{
+    throw new InvalidOperationException("La cadena de conexión no está configurada correctamente.");
+}
+
+string connectionString = DecryptConnectionString(encryptedConnectionString);
+
+
+
+// Configurar la conexión a la base de datos
+builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 
 // Configurar autenticación JWT
 builder.Services.AddAuthentication("Bearer")
@@ -52,8 +73,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ILogService, LogService>();
 
