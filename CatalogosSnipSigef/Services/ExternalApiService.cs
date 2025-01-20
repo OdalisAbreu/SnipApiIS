@@ -18,7 +18,7 @@ namespace CatalogosSnipSigef.Services
         public async Task<string> GetAuthTokenAsync()
         {
             var client = _httpClientFactory.CreateClient();
-            var loginUrl = "https://localhost:7261/api/Auth/login";
+            var loginUrl = "https://localhost:6100/api/Auth/login";
 
             // Body de la solicitud de login
             var loginRequest = new

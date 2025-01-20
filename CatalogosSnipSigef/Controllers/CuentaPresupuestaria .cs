@@ -92,7 +92,7 @@ namespace CatalogosSnipSigef.Controllers
             if (request == null || string.IsNullOrEmpty(request.cod_objetal))
             {
                 var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
-                string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto";
+                string urlFull = $"https://localhost:6100/api/clasificadores/sigeft/ObjetosGasto";
 
                 var cuentaPresupestariaResponse = await _externalApiService.GetCuentasPresupuestariasAsync(urlFull, token);
 
@@ -202,7 +202,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/ObjetosGasto/{request.cod_objetal}";
+            string url = $"https://localhost:6100/api/clasificadores/sigeft/ObjetosGasto/{request.cod_objetal}";
 
             // Consumir el servicio externo
             var fuenteExterna = await _externalApiService.GetCuentaPresupuestariaAsync(url, token);

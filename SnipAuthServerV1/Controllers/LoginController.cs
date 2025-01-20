@@ -145,7 +145,7 @@ namespace SnipAuthServerV1.Controllers
             });
 
             var client = _httpClientFactory.CreateClient();
-            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7079/connect/token")
+            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, "https://localhost:6002/connect/token")
             {
                 Content = tokenRequestContent
             };
@@ -208,7 +208,7 @@ namespace SnipAuthServerV1.Controllers
 
             // Solicitar revocación al IdentityServer
             var client = _httpClientFactory.CreateClient();
-            var revokeRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7079/connect/revocation")
+            var revokeRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:6002/connect/revocation")
             {
                 Content = new FormUrlEncodedContent(new[]
                 {

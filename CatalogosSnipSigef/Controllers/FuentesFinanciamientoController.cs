@@ -131,7 +131,7 @@ namespace CatalogosSnipSigef.Controllers
             if (request == null || string.IsNullOrEmpty(request.cod_fte_gral))
             {
                 var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
-                string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento";
+                string urlFull = $"https://localhost:6100/api/clasificadores/sigeft/FuentesDeFinanciamiento";
 
                 // Consumir el servicio externo
                 var fuenteFinanciamientoResponse = await _externalApiService.GetFuentesFinamciamientoAsync(urlFull, token);
@@ -300,7 +300,7 @@ namespace CatalogosSnipSigef.Controllers
 
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
+            string url = $"https://localhost:6100/api/clasificadores/sigeft/FuentesDeFinanciamiento/{request.cod_fte_gral}";
 
                 // Consumir el servicio externo
                 var fuenteExterna = await _externalApiService.GetFuenteFinamciamientoAsync(url, token);
@@ -470,14 +470,13 @@ namespace CatalogosSnipSigef.Controllers
                     estatus_msg = "No se encontró la fuente especificada."
                 });
             }
-            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
             var query = "SELECT * FROM cla_fuentes_especificas WHERE 1=1";
             var parameters = new DynamicParameters();
 
             query += "AND id_fte_gral = @id_fte_gral";
             parameters.Add("id_fte_gral", id);
 
-            var fEspecifica = await connection.QueryAsync(query, parameters);
+            var fEspecifica = await _dbConnection.QueryAsync(query, parameters);
 
             //return fEspecifica;
             try

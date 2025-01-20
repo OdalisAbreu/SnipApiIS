@@ -39,7 +39,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddAuthentication("Bearer")
     .AddOAuth2Introspection("Bearer", options =>
     {
-        options.Authority = "https://localhost:7079";
+        options.Authority = "https://localhost:6002";
         options.ClientId = "client_id";
         options.ClientSecret = "client_secret";
     });

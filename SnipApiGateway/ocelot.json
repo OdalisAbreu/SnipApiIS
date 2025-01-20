@@ -9,7 +9,7 @@
         {
           "Name": "IDP API",
           "Version": "v1",
-          "Url": "https://localhost:7079/swagger/v1/swagger.json"
+          "Url": "https://localhost:6002/swagger/v1/swagger.json"
         }
       ]
     },
@@ -19,7 +19,7 @@
         {
           "Name": "Servicios SNIP",
           "Version": "v1",
-          "Url": "https://localhost:7239/swagger/v1/swagger.json"
+          "Url": "https://localhost:6003/swagger/v1/swagger.json"
         }
       ]
     },
@@ -29,7 +29,37 @@
         {
           "Name": "Catalogo SNIP - SIGEF",
           "Version": "v1",
-          "Url": "https://localhost:7142/swagger/v1/swagger.json"
+          "Url": "https://localhost:6004/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "institucional_sigef",
+      "Config": [
+        {
+          "Name": "Institucional SIGEF",
+          "Version": "v1",
+          "Url": "https://localhost:6005/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "catalogo_fases",
+      "Config": [
+        {
+          "Name": "Catalogo Fases",
+          "Version": "v1",
+          "Url": "https://localhost:6006/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "catalogo_estados",
+      "Config": [
+        {
+          "Name": "Catalogo Estados",
+          "Version": "v1",
+          "Url": "https://localhost:6007/swagger/v1/swagger.json"
         }
       ]
     }
@@ -43,7 +73,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7079
+          "Port": 6002
         }
       ],
       "SwaggerKey": "autenticacion"
@@ -56,7 +86,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7079
+          "Port": 6002
         }
       ],
       "SwaggerKey": "autenticacion"
@@ -69,7 +99,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7239
+          "Port": 6003
         }
       ],
       "SwaggerKey": "servicios"
@@ -82,7 +112,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7239
+          "Port": 6003
         }
       ],
       "SwaggerKey": "servicios"
@@ -95,7 +125,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7239
+          "Port": 6003
         }
       ],
       "SwaggerKey": "servicios"
@@ -108,7 +138,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7239
+          "Port": 6003
         }
       ],
       "SwaggerKey": "servicios"
@@ -121,7 +151,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -134,7 +164,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -147,7 +177,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -160,7 +190,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -173,7 +203,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -186,7 +216,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -199,7 +229,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -212,7 +242,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -225,7 +255,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -238,7 +268,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -251,7 +281,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -264,7 +294,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -277,7 +307,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -290,7 +320,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -303,7 +333,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -316,7 +346,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
@@ -329,10 +359,62 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7142
+          "Port": 6004
         }
       ],
       "SwaggerKey": "catalogos"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/institucional",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/institucional",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 6005
+        }
+      ],
+      "SwaggerKey": "institucional_sigef"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/sigef/cla/institucional/{id}",
+      "UpstreamHttpMethod": [ "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/servicios/v1/sigef/cla/institucional/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 6005
+        }
+      ],
+      "SwaggerKey": "institucional_sigef"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/cla/fases",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/fases",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 6006
+        }
+      ],
+      "SwaggerKey": "catalogo_fases"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/cla/estados",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/estados",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 6007
+        }
+      ],
+      "SwaggerKey": "catalogo_estados"
     }
   ]
 }

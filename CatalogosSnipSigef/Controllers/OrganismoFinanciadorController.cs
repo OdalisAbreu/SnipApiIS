@@ -92,7 +92,7 @@ namespace CatalogosSnipSigef.Controllers
                 var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
 
                 // Construir la URL con los parámetros requeridos
-                string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/OrganismoFinanciador";
+                string urlFull = $"https://localhost:6100/api/clasificadores/sigeft/OrganismoFinanciador";
 
                 // Consumir el servicio externo
                 var organismoFinanciadoresResponse = await _externalApiService.GetOrganismosFinanciadoresAsync(urlFull, token);
@@ -202,7 +202,7 @@ namespace CatalogosSnipSigef.Controllers
             }
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/OrganismoFinanciador/{request.Idcod_orgfin}";
+            string url = $"https://localhost:6100/api/clasificadores/sigeft/OrganismoFinanciador/{request.Idcod_orgfin}";
 
             // Consumir el servicio externo
             var organismoFinanciador = await _externalApiService.GetOrganismoFinanciadorAsync(url, token);

@@ -1,6 +1,5 @@
 ﻿using CatalogosSnipSigef.Models;
 using Microsoft.EntityFrameworkCore;
-using CatalogosSnipSigef.Models;
 
 namespace CatalogosSnipSigef.Services
 {

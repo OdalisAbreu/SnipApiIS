@@ -85,7 +85,7 @@ namespace CatalogosSnipSigef.Controllers
             if (request == null || string.IsNullOrEmpty(request.cod_su_funcion))
             {
                 var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
-                string urlFull = $"https://localhost:7261/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+                string urlFull = $"https://localhost:6100/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
 
                 // Consumir el servicio externo
                 var fuentesExternasResponse = await _externalApiService.GetFuentesExternasAsync(urlFull, token);
@@ -195,7 +195,7 @@ namespace CatalogosSnipSigef.Controllers
 
 
             // Construir la URL con los parámetros requeridos
-            string url = $"https://localhost:7261/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+            string url = $"https://localhost:6100/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
 
 
             // Consumir el servicio externo

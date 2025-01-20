@@ -1,0 +1,6 @@
+@FasesProyectosSNIP_HostAddress = http://localhost:5221
+
+GET {{FasesProyectosSNIP_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
