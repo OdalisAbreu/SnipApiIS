@@ -9,6 +9,7 @@ using SnipAuthServerV1.Jobs;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using IDP.Services;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,29 @@ if (signingCert == null)
     throw new Exception("Certificado no encontrado en el almacén.");
 }
 
+// Método para desencriptar la cadena de conexión
+static string DecryptConnectionString(string encryptedData)
+{
+    byte[] encryptedBytes = Convert.FromBase64String(encryptedData);
+    byte[] decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.LocalMachine);
+    return System.Text.Encoding.UTF8.GetString(decryptedBytes);
+}
+
+// Leer la cadena de conexión cifrada desde la variable de entorno
+string encryptedConnectionString = Environment.GetEnvironmentVariable("DB_SNIP_BID_InterOper");
+// Console.WriteLine($"Leído: {encryptedConnectionString}");
+
+if (string.IsNullOrEmpty(encryptedConnectionString))
+{
+    throw new InvalidOperationException("La cadena de conexión no está configurada correctamente.");
+}
+
+string connectionString = DecryptConnectionString(encryptedConnectionString);
+
+// Configurar la conexión a la base de datos
+
+builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+
 // Configuración de CORS
 builder.Services.AddCors(options =>
 {
@@ -37,12 +61,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
-});
-
-builder.Services.AddScoped<IDbConnection>(sp =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    return new SqlConnection(connectionString);
 });
 
 // Configuración de IdentityServer4

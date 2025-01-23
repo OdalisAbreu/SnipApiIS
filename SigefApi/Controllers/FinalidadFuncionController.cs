@@ -17,22 +17,22 @@ namespace SigefApi.Controllers
         {
             new Fuente
             {
-                cod_finalidad = "1",
+                cod_finalidad = "3",
                 descripcion_finalidad = "Fuente Internas",
-                cod_funcion = "1",
+                cod_funcion = "3",
                 descripcion_funcion = "Fuente General",
-                cod_sub_funcion = "01",
+                cod_sub_funcion = "04",
                 descripcion_sub_funcion = "Fuente Específica 1",
                 estado = "habilitado",
                 condicion = "vigente"
             },
             new Fuente
             {
-                cod_finalidad = "1",
+                cod_finalidad = "3",
                 descripcion_finalidad = "Fuente Internas",
-                cod_funcion = "2",
+                cod_funcion = "3",
                 descripcion_funcion = "Fuente Especial",
-                cod_sub_funcion = "02",
+                cod_sub_funcion = "03",
                 descripcion_sub_funcion = "Fuente Específica 2",
                 estado = "habilitado",
                 condicion = "vigente"

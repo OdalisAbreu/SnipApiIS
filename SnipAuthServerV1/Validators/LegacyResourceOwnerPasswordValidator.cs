@@ -1,18 +1,17 @@
 ﻿using IdentityServer4.Models;
 using IdentityServer4.Validation;
 using System.Data;
-using System.Data.SqlClient;
 using System.Security.Claims;
 
 namespace SnipAuthServerV1.Validators
 {
     public class LegacyResourceOwnerPasswordValidator : IResourceOwnerPasswordValidator
     {
-        private readonly string _connectionString;
+        private readonly IDbConnection _dbConnection;
 
-        public LegacyResourceOwnerPasswordValidator(IConfiguration configuration)
+        public LegacyResourceOwnerPasswordValidator(IDbConnection dbConnection)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _dbConnection = dbConnection;
         }
 
         public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
@@ -22,41 +21,55 @@ namespace SnipAuthServerV1.Validators
 
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                // Usar la conexión inyectada (_dbConnection)
+                using (var connection = _dbConnection)
                 {
-                    await connection.OpenAsync();
-
-                    using (var command = new SqlCommand("dbo.f_usuarios_seg_estado", connection))
+                    if (connection.State != ConnectionState.Open)
                     {
+                        connection.Open(); // Si el proveedor no es SQL Server, usa una versión sincrónica.
+                    }
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "dbo.f_usuarios_seg_estado";
                         command.CommandType = CommandType.StoredProcedure;
 
                         // Parámetros de entrada
-                        command.Parameters.AddWithValue("@pa_cuenta_nom", context.UserName);
-                        command.Parameters.AddWithValue("@pa_cuenta_pas", context.Password);
+                        var usernameParam = command.CreateParameter();
+                        usernameParam.ParameterName = "@pa_cuenta_nom";
+                        usernameParam.Value = context.UserName;
+                        command.Parameters.Add(usernameParam);
+
+                        var passwordParam = command.CreateParameter();
+                        passwordParam.ParameterName = "@pa_cuenta_pas";
+                        passwordParam.Value = context.Password;
+                        command.Parameters.Add(passwordParam);
 
                         // Parámetro de salida para el valor de retorno
-                        var returnParameter = new SqlParameter("@return_value", SqlDbType.Int)
-                        {
-                            Direction = ParameterDirection.ReturnValue
-                        };
+                        var returnParameter = command.CreateParameter();
+                        returnParameter.ParameterName = "@return_value";
+                        returnParameter.DbType = DbType.Int32;
+                        returnParameter.Direction = ParameterDirection.ReturnValue;
                         command.Parameters.Add(returnParameter);
 
-                        // Ejecutar el procedimiento
-                        using (var reader = await command.ExecuteReaderAsync())
+                        // Ejecutar el procedimiento y capturar el resultado
+                        using (var reader = command.ExecuteReader())
                         {
-                            if (await reader.ReadAsync())
+                            if (reader.Read())
                             {
-                                // Capturamos el valor string principal (userFields concatenados)
-                                userInfo = reader.GetString(0);
+                                // Capturar el valor del procedimiento
+                                userInfo = reader.GetString(0); // Asegúrate de que el índice 0 es válido
                                 Console.WriteLine($"Procedure output: {userInfo}");
                             }
                         }
 
-                        // Capturar el valor de retorno
+                        // Leer el valor del parámetro de retorno
                         returnValue = (int)returnParameter.Value;
                         Console.WriteLine($"Return value: {returnValue}");
                     }
                 }
+
+                // Validar la respuesta del procedimiento almacenado
                 if (returnValue != 0 || string.IsNullOrEmpty(userInfo))
                 {
                     context.Result = new GrantValidationResult(
@@ -85,10 +98,12 @@ namespace SnipAuthServerV1.Validators
                     return;
                 }
 
+                // Extraer campos relevantes de la respuesta
                 var userId = userFields[0];
                 var nombre = userFields[2];
                 var username = userFields[7];
 
+                // Crear los claims para el usuario autenticado
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, userId),
@@ -96,11 +111,13 @@ namespace SnipAuthServerV1.Validators
                     new Claim("username", username),
                     new Claim("role", "user")
                 };
+
                 context.Result = new GrantValidationResult(
                     subject: userId,                 // Subject = ID de usuario
                     authenticationMethod: "custom",  // Nombre descriptivo
                     claims: claims
                 );
+
                 Console.WriteLine("User authenticated successfully.");
             }
             catch (Exception ex)

@@ -5,6 +5,7 @@ using System.Data;
 using CatalogosSnipSigef.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Newtonsoft.Json;
 
 
 namespace CatalogosSnipSigef.Controllers
@@ -17,11 +18,17 @@ namespace CatalogosSnipSigef.Controllers
         private readonly IDbConnection _dbConnection;
         private readonly ExternalApiService _externalApiService;
         private readonly string _urlApiBase;
-        public FuncionalController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration)
+        private readonly ILogService _logService;
+        private readonly string _ip;
+        private readonly string _route;
+        public FuncionalController(IDbConnection dbConnection, ExternalApiService externalApiService, IConfiguration configuration, ILogService logService)
         {
             _dbConnection = dbConnection;
             _externalApiService = externalApiService;
             _urlApiBase = configuration["SigefApi:Url"];
+            _logService = logService;
+            _ip = "127.0.0.1";
+            _route = "/servicios/v1/sigef/cla/funcional";
         }
 
         [HttpGet]
@@ -55,29 +62,17 @@ namespace CatalogosSnipSigef.Controllers
                 total_registros = totalRegistros,
                 cla_funcionales = funcionales
             });
-
+            await _logService.LogAsync("Info", $"Usuario: {userName} Consulta Funcional", int.Parse(userId), _ip, _route, $"id_funcional: {id_funcional}", JsonConvert.SerializeObject(objet[0]), "GET");
             return Ok(objet[0]);
         }
 
         [HttpPost]
-        public async Task<IActionResult> InsertFuncionalFromExternalService([FromBody] CodFuncionRequest request)
+        public async Task<IActionResult> InsertFuncionalFromExternalService([FromBody] CodFuncionRequest? request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
             var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
-
-            // Validar que el campo codFteGral sea obligatorio
-            if (string.IsNullOrEmpty(request.cod_su_funcion))
-            {
-                return BadRequest(new
-                {
-                    estatus_code = "400",
-                    estatus_msg = "El campo 'codFteGral' es obligatorio."
-                });
-            }
-
             // Autenticación: Obtener el token de acceso
             var token = await _externalApiService.GetAuthTokenAsync();
-
             if (string.IsNullOrEmpty(token))
             {
                 return StatusCode(401, new
@@ -87,8 +82,121 @@ namespace CatalogosSnipSigef.Controllers
                 });
             }
 
+            if (request == null || string.IsNullOrEmpty(request.cod_su_funcion))
+            {
+                var responseJson = new List<object>(); // Lista para acumular los resultados de las iteraciones
+                string urlFull = $"https://localhost:6100/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+
+                // Consumir el servicio externo
+                var fuentesExternasResponse = await _externalApiService.GetFuentesExternasAsync(urlFull, token);
+
+                if (fuentesExternasResponse != null && fuentesExternasResponse.datos != null)
+                {
+                    foreach (var fuente in fuentesExternasResponse.datos)
+                    {
+                        try
+                        {
+                            // Validar si ya existe el registro en la base de datos
+                            var existingFuncional = _dbConnection.QueryFirstOrDefault("SELECT * FROM cla_funcional WHERE cod_finalidad = @cod_finalidad AND cod_funcion = @cod_funcion AND cod_sub_funcion = @cod_sub_funcion",
+                                new
+                                {
+                                    cod_finalidad = fuente.cod_finalidad,
+                                    cod_funcion = fuente.cod_funcion,
+                                    cod_sub_funcion = fuente.cod_sub_funcion
+                                });
+
+                            if (existingFuncional != null)
+                            {
+                                // Actualizar el registro existente
+                                var parametros = new DynamicParameters();
+                                parametros.Add("id_funcional", existingFuncional.id_funcional);
+                                parametros.Add("cod_finalidad", fuente.cod_finalidad);
+                                parametros.Add("cod_funcion", fuente.cod_funcion);
+                                parametros.Add("cod_sub_funcion", fuente.cod_sub_funcion);
+                                parametros.Add("descripcion", fuente.descripcion_sub_funcion);
+                                parametros.Add("terminal", "S");
+                                parametros.Add("activo", fuente.estado == "habilitado" ? "S" : "N");
+                                parametros.Add("estado", "actualizar");
+                                parametros.Add("bandeja", 0);
+                                parametros.Add("usu_ins", existingFuncional.usu_ins); // Mantener el usuario original de inserción
+                                parametros.Add("fec_ins", existingFuncional.fec_ins); // Mantener la fecha original de inserción
+                                parametros.Add("usu_upd", userId);
+                                parametros.Add("fec_upd", DateTime.Now);
+
+                                var returnValue = _dbConnection.QuerySingle<int>("dbo.f_cla_funcional_upd", parametros, commandType: CommandType.StoredProcedure);
+
+                                // Agregar la respuesta de actualización
+                                responseJson.Add(new
+                                {
+                                    status = "update",
+                                    cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
+                                    descripcion = fuente.descripcion_sub_funcion
+                                });
+                            }
+                            else
+                            {
+                                // Insertar un nuevo registro si no existe
+                                var resultJson = _dbConnection.Execute("dbo.f_cla_funcional_ins", new
+                                {
+                                    id_funcional = 0, // Indica que deseas asignar el ID automáticamente
+                                    cod_finalidad = fuente.cod_finalidad,
+                                    cod_funcion = fuente.cod_funcion,
+                                    cod_sub_funcion = fuente.cod_sub_funcion,
+                                    descripcion = fuente.descripcion_sub_funcion,
+                                    terminal = "S",
+                                    activo = fuente.estado == "habilitado" ? "S" : "N",
+                                    estado = "registrar",
+                                    bandeja = 0,
+                                    usu_ins = userId,
+                                    fec_ins = DateTime.Now,
+                                    usu_upd = userId,
+                                    fec_upd = DateTime.Now,
+                                }, commandType: CommandType.StoredProcedure);
+
+                                // Agregar la respuesta de creación
+                                responseJson.Add(new
+                                {
+                                    status = "create",
+                                    cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
+                                    descripcion = fuente.descripcion_sub_funcion
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Construir la entrada de error
+                            responseJson.Add(new
+                            {
+                                status = "fail",
+                                cod_su_funcion = $"{fuente.cod_finalidad}{fuente.cod_funcion}{fuente.cod_sub_funcion}",
+                                details = ex.Message
+                            });
+
+                        }
+                    }
+                }
+                else
+                {
+                    return BadRequest(new
+                    {
+                        estatus_code = "404",
+                        estatus_msg = "No se encontraron fuentes externas para insertar."
+                    });
+                }
+
+                await _logService.LogAsync("Info", $"Usuario: {userName} procesa fuentes funcionales masivas", int.Parse(userId), _ip, _route, $"cod_objetal: null", $" estatus_code = 201, estatus_msg = Proceso completado con éxito., register_status = {responseJson}", "POST");
+                return Ok(new
+                {
+                    estatus_code = "201",
+                    estatus_msg = "Fuentes funcionales procesadas correctamente.",
+                    register_status = responseJson
+                });
+            }
+
+
             // Construir la URL con los parámetros requeridos
-            string url = $"{_urlApiBase}/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+            string url = $"https://localhost:6100/api/clasificadores/sigeft/fuente/{request.cod_su_funcion}";
+
 
             // Consumir el servicio externo
             var fuenteExterna = await _externalApiService.GetFuenteExternaAsync(url, token);
@@ -118,7 +226,7 @@ namespace CatalogosSnipSigef.Controllers
                 usu_upd = userId,
                 fec_upd = DateTime.Now,
             }, commandType: CommandType.StoredProcedure);
-
+            await _logService.LogAsync("Info", $"Usuario: {userName} Registra Funcional a las {DateTime.Now}", int.Parse(userId), _ip, _route, $"cod_objetal: {request.cod_su_funcion}", "estatus_code = 201", "POST");
             return Ok(new
             {
                 estatus_code = "201",
@@ -191,6 +299,7 @@ namespace CatalogosSnipSigef.Controllers
 
                 if (returnValue > 0)
                 {
+                    await _logService.LogAsync("Info", $"Usuario: {userName} Actualizar Funcional id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), " estatus_code = 200", "PUT");
                     return Ok(new
                     {
                         estatus_code = "200",
@@ -206,6 +315,7 @@ namespace CatalogosSnipSigef.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} actualiza funcional id: {id}", int.Parse(userId), _ip, _route, JsonConvert.SerializeObject(request), " estatus_code = 200", "PUT");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
@@ -234,7 +344,7 @@ namespace CatalogosSnipSigef.Controllers
                 return NotFound(new
                 {
                     estatus_code = "404",
-                    estatus_msg = "No se encontró la fuente especificada."
+                    estatus_msg = "No se encontró el funcional."
                 });
             }
             try
@@ -245,19 +355,20 @@ namespace CatalogosSnipSigef.Controllers
                     estado = "S",
                     usu_upd = userId
                 }, commandType: CommandType.StoredProcedure);
-
+                await _logService.LogAsync("Info", $"Usuario: {userName} Elimina funcional id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
                 return Ok(new
                 {
                     estatus_code = "200",
-                    estatus_msg = "Fuente eliminada correctamente."
+                    estatus_msg = "Funcional eliminada correctamente."
                 });
             }
             catch (Exception ex)
             {
+                await _logService.LogAsync("Error", ex.Message + $" Usuario: {userName} Eliminar funcional id: {id}", int.Parse(userId), _ip, _route, $"id: {id}", " estatus_code = 200", "DELETE");
                 return StatusCode(500, new
                 {
                     estatus_code = "500",
-                    estatus_msg = "Ocurrió un error al intentar actualizar funcional.",
+                    estatus_msg = "Ocurrió un error al intentar eliminar funcional.",
                     detalle_error = ex.Message
                 });
             }

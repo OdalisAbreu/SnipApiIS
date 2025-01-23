@@ -1,7 +1,9 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Data.SqlClient;
+using Newtonsoft.Json;
+using ServiciosSnip.Services;
+using System.Data;
 using System.Security.Claims;
 
 namespace SnipAuthServerV1.Controllers
@@ -10,60 +12,62 @@ namespace SnipAuthServerV1.Controllers
     [Route("servicios/v1/snip/cla/[controller]")]
     public class TipologiasController : Controller
     {
-        private readonly IConfiguration _configuration;
+        private readonly IDbConnection _dbConnection;
         private readonly ILogger<TipologiasController> _logger;
+        private readonly ILogService _logService;
+        private readonly string _route;
 
-        public TipologiasController(IConfiguration configuration, ILogger<TipologiasController> logger)
+        public TipologiasController(IDbConnection dbConnection, ILogger<TipologiasController> logger, ILogService logService)
         {
-            _configuration = configuration;
+            _dbConnection = dbConnection;
             _logger = logger;
+            _logService = logService;
+            _route = "servicios/v1/snip/cla/tipologias";
         }
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> tipologias([FromQuery] int? id_tipologia = null  )
+        public async Task<IActionResult> tipologias([FromQuery] int? id_tipologia = null)
         {
-            // Obtener la hora actual y el nombre del usuario autenticado
             var fechaHora = DateTime.UtcNow; // Hora en UTC
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "ID desconocido";
             var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Nombre desconocido";
 
-            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-
             var query = "SELECT * FROM cla_tipologias WHERE 1=1";
             var parameters = new DynamicParameters();
 
-
             if (id_tipologia.HasValue)
             {
-                query += "AND id_tipologia = @id_tipologia";
+                query += " AND id_tipologia = @id_tipologia";
                 parameters.Add("id_tipologia", id_tipologia.Value);
             }
 
-            var tipologias = await connection.QueryAsync(query, parameters);
+            var tipologias = await _dbConnection.QueryAsync(query, parameters);
 
             var result = new List<object>();
-            foreach (var tipologia in tipologias) 
+            foreach (var tipologia in tipologias)
             {
-                result.Add(new {
+                result.Add(new
+                {
                     id_tipologia = tipologia.id_tipologia,
                     des_tipologia = tipologia.descripcion,
-                    flg_habilitado = tipologia.usu_ins == 1 ? true : false
+                    flg_habilitado = tipologia.usu_ins == 1
                 });
             }
-            var totalRegistros = result.Count;
-            // Obtener la dirección IP del usuario
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            SentrySdk.CaptureMessage($"Consulta Usuario: {userName} al endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}");
 
-            var objet = new List<object>();
-            objet.Add(new
+            var totalRegistros = result.Count;
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            SentrySdk.CaptureMessage($"Consulta Usuario: {userName} al endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}");
+            await _logService.LogAsync("Info", $"Consulta Usuario: {userName} al endpoint Topologias a las {DateTime.Now}, desde IP: {ipAddress}", int.Parse(userId), ipAddress, _route, $"id_tipologia: {id_tipologia}", JsonConvert.SerializeObject(result), "GET");
+
+            var response = new
             {
                 total_registros = totalRegistros,
-                cla_tipologias = new List<object>(result),
-            });
-            return Ok(objet[0]);
-        }
+                cla_tipologias = result
+            };
 
+            return Ok(response);
+        }
     }
 }
