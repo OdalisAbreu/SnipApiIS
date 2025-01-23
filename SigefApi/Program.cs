@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +62,25 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+app.Use(async (context, next) =>
+{
+    await next();
+
+    if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+    {
+        context.Response.ContentType = "application/json";
+
+        var errorResponse = new
+        {
+            error = "Unauthorized",
+            message = "Error de autenticación. Token nulo o invalido."
+        };
+
+        // Serializamos el objeto como JSON antes de escribirlo
+        await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
+    }
+});
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>

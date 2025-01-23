@@ -13,7 +13,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("https://localhost:7079") // Cambia al dominio autorizado
+        policy.WithOrigins("https://localhost:6002") // Cambia al dominio autorizado
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -25,14 +25,12 @@ builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange
 // Configura SwaggerForOcelot
 builder.Services.AddSwaggerForOcelot(builder.Configuration);
 
-// Configura Ocelot (llamar solo una vez y después de SwaggerForOcelot)
-builder.Services.AddOcelot(builder.Configuration);
 
 // Configura autenticación y autorización
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://localhost:7079"; // Dirección de IdentityServer4
+        options.Authority = "https://localhost:6002"; // Dirección de IdentityServer4
         options.RequireHttpsMetadata = true;
         options.Audience = "api_scope"; // El scope definido en tu AuthServer
         options.Events = new JwtBearerEvents
@@ -47,7 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                         Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("client_id:client_secret")));
                     var response = await httpClient.PostAsync(
-                        "https://localhost:7079/connect/introspect",
+                        "https://localhost:6002/connect/introspect",
                         new FormUrlEncodedContent(new Dictionary<string, string> { { "token", token.RawData } }));
 
                     if (!response.IsSuccessStatusCode)
@@ -60,6 +58,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+// Configura Ocelot (llamar solo una vez y después de SwaggerForOcelot)
+builder.Services.AddOcelot(builder.Configuration);
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Configura Swagger para el API Gateway
@@ -109,9 +110,6 @@ app.UseSwagger();
 app.UseSwaggerForOcelotUI(opt =>
 {
     opt.PathToSwaggerGenerator = "/swagger/docs";
-    // Si usas OAuth2, puedes descomentar y configurar las siguientes líneas
-    // opt.OAuthClientId("client_id");
-    // opt.OAuthAppName("API Gateway Swagger UI");
 });
 
 // Configura Ocelot

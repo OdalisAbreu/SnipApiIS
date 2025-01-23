@@ -1,15 +1,15 @@
 using IdentityServer4.AccessTokenValidation;
 using IdentityServer4.Models;
 using IdentityServer4.Validation;
-using IdentityServer4.Stores;
 using Microsoft.OpenApi.Models;
 using SnipAuthServerV1.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Security.Cryptography.X509Certificates;
 using SnipAuthServerV1.Jobs;
-using SnipAuthServerV1.Services;
 using System.Data;
 using Microsoft.Data.SqlClient;
+using IDP.Services;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +28,29 @@ if (signingCert == null)
     throw new Exception("Certificado no encontrado en el almacén.");
 }
 
+// Método para desencriptar la cadena de conexión
+static string DecryptConnectionString(string encryptedData)
+{
+    byte[] encryptedBytes = Convert.FromBase64String(encryptedData);
+    byte[] decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.LocalMachine);
+    return System.Text.Encoding.UTF8.GetString(decryptedBytes);
+}
+
+// Leer la cadena de conexión cifrada desde la variable de entorno
+string encryptedConnectionString = Environment.GetEnvironmentVariable("DB_SNIP_BID_InterOper");
+// Console.WriteLine($"Leído: {encryptedConnectionString}");
+
+if (string.IsNullOrEmpty(encryptedConnectionString))
+{
+    throw new InvalidOperationException("La cadena de conexión no está configurada correctamente.");
+}
+
+string connectionString = DecryptConnectionString(encryptedConnectionString);
+
+// Configurar la conexión a la base de datos
+
+builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+
 // Configuración de CORS
 builder.Services.AddCors(options =>
 {
@@ -38,12 +61,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
-});
-
-builder.Services.AddScoped<IDbConnection>(sp =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    return new SqlConnection(connectionString);
 });
 
 // Configuración de IdentityServer4
@@ -72,22 +89,30 @@ builder.Services.AddIdentityServer()
             ClientId = builder.Configuration["Access:ClientId"],
             AllowedGrantTypes = GrantTypes.ResourceOwnerPasswordAndClientCredentials,
             ClientSecrets = { new Secret(builder.Configuration["Access:ClientSecrets"].Sha256()) },
-            AllowedScopes = { "api_resource", "api_scope" },
+            AllowedScopes = { "api_resource", "api_scope", "offline_access", "openid", "profile" },
             AllowOfflineAccess = true,
             AccessTokenType = AccessTokenType.Reference,
             AccessTokenLifetime = 60 * 30,
-            IdentityTokenLifetime = 60 * 30 
+            IdentityTokenLifetime = 60 * 30
         }
     })
     .AddDeveloperSigningCredential()
     .AddInMemoryIdentityResources(new List<IdentityResource>
     {
         new IdentityResources.OpenId(),
-        new IdentityResources.Profile()
+        new IdentityResources.Profile(),
+        new IdentityResource
+        {
+            Name = "offline_access",
+            DisplayName = "Offline Access",
+            Description = "Access to use refresh tokens",
+            UserClaims = new List<string>() // No necesita claims
+        }
     })
     .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
     .AddInMemoryPersistedGrants()
-    .AddSigningCredential(signingCert);
+    .AddSigningCredential(signingCert)
+    .AddProfileService<CustomProfileService>();
 
 // Configuración de Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -131,7 +156,7 @@ builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.Authenti
         options.Authority = builder.Configuration["Access:UrlBase"]; // Cambia al URL de tu IdentityServer
         options.ApiName = "api_resource"; // El nombre del recurso API definido en IdentityServer
         options.ApiSecret = builder.Configuration["Access:ApiSecret"]; // El secreto configurado para el API
-        options.RequireHttpsMetadata = false; // Solo usa 'false' para desarrollo
+        options.RequireHttpsMetadata = true; // Solo usa 'false' para desarrollo
     });
 
 // Configurar Sentry usando la configuración de appsettings.json
@@ -147,7 +172,6 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<IResourceOwnerPasswordValidator, SnipAuthServerV1.Validators.LegacyResourceOwnerPasswordValidator>();
 builder.Services.AddSingleton<IHostedService, TokenCleanupJob>();
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<ExternalApiService>();
 
 
 var app = builder.Build();
