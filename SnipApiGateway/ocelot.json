@@ -32,36 +32,6 @@
           "Url": "https://localhost:6004/swagger/v1/swagger.json"
         }
       ]
-    },
-    {
-      "Key": "institucional_sigef",
-      "Config": [
-        {
-          "Name": "Institucional SIGEF",
-          "Version": "v1",
-          "Url": "https://localhost:6005/swagger/v1/swagger.json"
-        }
-      ]
-    },
-    {
-      "Key": "catalogo_fases",
-      "Config": [
-        {
-          "Name": "Catalogo Fases",
-          "Version": "v1",
-          "Url": "https://localhost:6006/swagger/v1/swagger.json"
-        }
-      ]
-    },
-    {
-      "Key": "catalogo_estados",
-      "Config": [
-        {
-          "Name": "Catalogo Estados",
-          "Version": "v1",
-          "Url": "https://localhost:6007/swagger/v1/swagger.json"
-        }
-      ]
     }
   ],
   "Routes": [
@@ -134,6 +104,32 @@
       "UpstreamPathTemplate": "/api/v1/cla/tipologias",
       "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/servicios/v1/snip/cla/Tipologias",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 6003
+        }
+      ],
+      "SwaggerKey": "servicios"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/cla/fases",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/fases",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 6003
+        }
+      ],
+      "SwaggerKey": "servicios"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/cla/estados",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/servicios/v1/snip/cla/estados",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
@@ -372,10 +368,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 6005
+          "Port": 6004
         }
       ],
-      "SwaggerKey": "institucional_sigef"
+      "SwaggerKey": "catalogos"
     },
     {
       "UpstreamPathTemplate": "/api/v1/sigef/cla/institucional/{id}",
@@ -385,36 +381,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 6005
+          "Port": 6004
         }
       ],
-      "SwaggerKey": "institucional_sigef"
-    },
-    {
-      "UpstreamPathTemplate": "/api/v1/cla/fases",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/servicios/v1/snip/cla/fases",
-      "DownstreamScheme": "https",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 6006
-        }
-      ],
-      "SwaggerKey": "catalogo_fases"
-    },
-    {
-      "UpstreamPathTemplate": "/api/v1/cla/estados",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/servicios/v1/snip/cla/estados",
-      "DownstreamScheme": "https",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 6007
-        }
-      ],
-      "SwaggerKey": "catalogo_estados"
+      "SwaggerKey": "catalogos"
     }
   ]
 }

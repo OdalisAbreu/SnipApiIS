@@ -38,7 +38,7 @@ static string DecryptConnectionString(string encryptedData)
 
 // Leer la cadena de conexión cifrada desde la variable de entorno
 string encryptedConnectionString = Environment.GetEnvironmentVariable("DB_SNIP_BID_InterOper");
-//Console.WriteLine($"Leído: {encryptedConnectionString}");
+// Console.WriteLine($"Leído: {encryptedConnectionString}");
 
 if (string.IsNullOrEmpty(encryptedConnectionString))
 {
@@ -48,8 +48,8 @@ if (string.IsNullOrEmpty(encryptedConnectionString))
 string connectionString = DecryptConnectionString(encryptedConnectionString);
 
 // Configurar la conexión a la base de datos
-builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 
+builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 
 // Configuración de CORS
 builder.Services.AddCors(options =>

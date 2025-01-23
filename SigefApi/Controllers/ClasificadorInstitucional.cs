@@ -89,18 +89,41 @@ namespace SigefApi.Controllers
         }
 
         // GET detalle de una institución por id
-        [HttpGet("{id_institucion}")]
-        public IActionResult GetClasificadorDetails(string id_institucion)
+        [HttpGet("{cod_institucion}")]
+        public IActionResult GetClasificadorDetails(string cod_institucion)
         {
             try
             {
-                if (string.IsNullOrEmpty(id_institucion))
+                if (string.IsNullOrEmpty(cod_institucion))
                 {
                     return BadRequest(new { mensaje = "El parámetro id_institucion es requerido." });
                 }
 
+                var cod_sector = cod_institucion.Substring(0, 1);
+                var cod_subsector = cod_institucion.Substring(1, 1);
+                var cod_area = cod_institucion.Substring(2, 1);
+                var cod_subarea = cod_institucion.Substring(3, 1);
+                var cod_seccion = cod_institucion.Substring(4, 1);
+                var cod_poderes_oe = cod_institucion.Substring(5, 2);
+                var cod_entidades = cod_institucion.Substring(7, 4);
+                var cod_capitulo = cod_institucion.Substring(11, 4);
+                var cod_subcapitulo = cod_institucion.Substring(15, 2);
+                var cod_ue = cod_institucion.Substring(17, 4);
+
+                Console.WriteLine($"{cod_sector} - {cod_subsector}  - {cod_area} - {cod_subarea} - {cod_seccion} - {cod_poderes_oe}  - {cod_entidades}" +
+                                    $" - {cod_capitulo} - {cod_subcapitulo} - {cod_ue} " );
+
                 var clasificador = Clasificadores.FirstOrDefault(c =>
-                    c.id_institucion == id_institucion &&
+                    c.cod_sector == cod_sector &&
+                    c.cod_subsector == cod_subsector &&
+                    c.cod_area == cod_area &&
+                    c.cod_subarea == cod_subarea &&
+                    c.cod_seccion == cod_seccion &&
+                    c.cod_poderes_oe == cod_poderes_oe &&
+                    c.cod_entidades == cod_entidades &&
+                    c.cod_capitulo == cod_capitulo &&
+                    c.cod_subcapitulo == cod_subcapitulo &&
+                    c.cod_sector == cod_sector &&
                     c.estado == "habilitado" &&
                     c.condicion == "vigente");
 

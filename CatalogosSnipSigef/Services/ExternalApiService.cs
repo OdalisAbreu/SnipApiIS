@@ -137,28 +137,6 @@ namespace CatalogosSnipSigef.Services
                 PropertyNameCaseInsensitive = true
             });
         }
-
-     /*   public async Task<FuentesFinanciamientsResponse> GetFuentesFinanciamientosAsync(string url, string token)
-        {
-            var client = _httpClientFactory.CreateClient();
-
-            // Configurar el token en los headers
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await client.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                // Manejar el error adecuadamente
-                return null;
-            }
-
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<FuentesFinanciamientsResponse>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-        }*/
         public async Task<CuentaPresupuestariaResponse> GetCuentaPresupuestariaAsync(string url, string token)
         {
             var client = _httpClientFactory.CreateClient();
@@ -229,15 +207,10 @@ namespace CatalogosSnipSigef.Services
         public async Task<OrganismosFinanciadoresResponsive> GetOrganismosFinanciadoresAsync(string url, string token)
         {
             var client = _httpClientFactory.CreateClient();
-
-            // Configurar el token en los headers
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var response = await client.GetAsync(url);
-
             if (!response.IsSuccessStatusCode)
             {
-                // Manejar el error adecuadamente
                 return null;
             }
 
@@ -247,6 +220,51 @@ namespace CatalogosSnipSigef.Services
                 PropertyNameCaseInsensitive = true
             });
         }
+
+        //Optener Funete externa 
+
+        public async Task<ClasificadoresInstitucionalesRequest> GetClasificadoresAsync(string url, string token)
+        {
+            var client = _httpClientFactory.CreateClient();
+
+            // Configurar el token en los headers
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await client.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ClasificadoresInstitucionalesRequest>(content, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
+        public async Task<ClasificadorInstitucionalRequest> GetClasificadorAsync(string url, string token)
+        {
+            var client = _httpClientFactory.CreateClient();
+
+            // Configurar el token en los headers
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await client.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ClasificadorInstitucionalRequest>(content, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
 
         // Clase para deserializar la respuesta del token
         public class TokenResponse
